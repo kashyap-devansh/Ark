@@ -1,0 +1,156 @@
+#pragma once
+#ifndef CORE_H
+#define CORE_H
+
+#include <string>
+#include <vector>
+
+//====================================================================== DATATYPES ======================================================================
+
+enum class DataType {
+    NONE,
+    INT,
+    DOUBLE,
+    STRING,
+    BOOL
+};
+
+union Value {
+    int Int;
+    double Double;
+    bool Bool;
+};
+
+//====================================================================== COLUMN ======================================================================
+
+class Column {
+private :
+    std::string columnName;
+    DataType type;
+
+public :
+    Column(const std::string& name, DataType type);
+
+    std::string getName() const;
+    DataType getType() const;
+};
+
+//================================ CELL ================================
+
+class Cell {
+private :
+    DataType type;
+    Value value;
+    std::string stringValue;
+    bool isNull;
+
+public :
+    Cell();
+    Cell(int value);
+    Cell(double value);
+    Cell(const std::string& value);
+    Cell(bool value);
+
+    DataType getType() const;
+    bool null() const;
+
+    int getInt() const;
+    double getDouble() const;
+    std::string getString() const;
+    bool getBool() const;
+
+    void setInt(int value);
+    void setDouble(double value);
+    void setString(const std::string& value);
+    void setBool(bool value);
+    void setNull();
+
+    std::string toString() const;
+
+    bool operator==(const Cell& other) const;
+    bool operator!=(const Cell& other) const;
+    bool operator<(const Cell& other) const;
+    bool operator>(const Cell& other) const;
+    bool operator<=(const Cell& other) const;
+    bool operator>=(const Cell& other) const;
+};
+
+//================================ ROW ================================
+
+class Row {
+private :
+    std::vector<Cell> cells;
+public :
+    void addCell(const Cell& cell);
+
+    void setCell(int index, const Cell& cell);
+
+    Cell getCell(int index) const;
+
+    int getCellCount() const;
+
+    std::string toString() const;
+};
+
+//================================ ROW ================================
+
+class Table {
+private :
+    std::string tableName;
+    std::vector<Column> columns;
+    std::vector<Row> rows;
+
+    std::string structureFilePath;
+    std::string dataFilePath;
+
+    bool validateRow(const Row& row) const;
+
+public :
+    Table(const std::string& name, const std::string& structurePath, const std::string& dataPath);
+
+    std::string getName() const;
+
+    void addColumn(const Column& column);
+
+    int getColumnCount() const;
+    std::string getColumName(int index) const;
+
+    void insertRow(const Row& row);
+
+    void updateCell(int rowIndex, int columnIndex, const Cell& newValue);
+
+    void deleteRow(int rowIndex);
+
+    std::vector<Row> selectAll() const;
+
+    bool saveStructureToFile() const;
+    bool loadStructureFromFile();
+
+    bool saveDataToFile() const;
+    bool loadDataFromFile();
+};
+
+//====================================================================== DATABASE ======================================================================
+
+class Database {
+private :
+    std::string databaseName;
+    std::vector<Table> tables;
+    std::string databaseFolderPath;
+public :
+    Database();
+    Database(const std::string& name, const std::string& folderPath);
+    
+    std::string getName();
+    Table* getTable(const std::string& tableName);
+
+    void createTable(const std::string& tableName);
+    void dropTable(const std::string& tableName);
+
+    std::vector<std::string> listTables() const;
+
+    void loadDatabase();
+    void saveDatabase();
+};
+
+#endif

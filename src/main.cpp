@@ -1,0 +1,45 @@
+#include <iostream>
+#include <fstream>
+
+#include "parser.h"
+#include "databaseManager.h"
+
+int main(int argc, char* argv[]) {
+    if(argc < 2) {
+        std::cerr << "Usage: ./file.exe code.ark\n";
+        return 1;
+    }
+
+    DatabaseManager manager;
+
+    std::ifstream file(argv[1]);
+    if(!file) {
+        std::cerr << "failed to open " << argv[1] << "\n";
+        return 1;
+    }
+
+    std::string command;
+    char ch;
+    int currentLine = 1;
+    int commandStartLine = 1;
+
+    while(file.get(ch)) {
+        // if(ch == '\r') continue;
+        // if(ch == '\n' && command.empty()) continue;
+        if(ch == '\n') currentLine++;
+
+        command += ch;
+
+        if(ch == ';') {
+            
+            Parser parser(command, commandStartLine);
+            parser.parse(manager);
+
+            command.clear();
+
+            commandStartLine = currentLine;
+        }
+    } 
+
+    return 0;
+}
