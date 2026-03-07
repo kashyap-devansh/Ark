@@ -24,8 +24,6 @@ int main(int argc, char* argv[]) {
     int commandStartLine = 1;
 
     while(file.get(ch)) {
-        // if(ch == '\r') continue;
-        // if(ch == '\n' && command.empty()) continue;
         if(ch == '\n') currentLine++;
 
         command += ch;

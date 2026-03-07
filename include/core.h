@@ -114,6 +114,7 @@ public :
 
     int getColumnCount() const;
     std::string getColumName(int index) const;
+    DataType getColumnType(int index) const;
 
     void insertRow(const Row& row);
 

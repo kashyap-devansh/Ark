@@ -11,6 +11,7 @@ enum class TokenType {
     TOK_STRING,            // "Dev"
     TOK_TRUE,              // true
     TOK_FALSE,             // false
+    TOK_NULL,              // NULL
 
     // ----- Database Commands -----
     TOK_CREATE,            // CREATE
@@ -19,12 +20,14 @@ enum class TokenType {
     TOK_SAVE,              // SAVE
     TOK_LOAD,              // LOAD
     TOK_DATABASE,          // DATABASE
+    TOK_DATABASES,         // DATABASES
     TOK_USE,               // USE
 
     // ----- Table Keywords -----
     TOK_TABLE,             // TABLE
     TOK_TABLES,            // TABLES
     TOK_COLUMN,            // COLUMN
+    TOK_COLUMNS,           // COLUMNS
 
     // ----- Data Operations -----
     TOK_INSERT,            // INSERT

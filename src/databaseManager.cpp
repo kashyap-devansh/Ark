@@ -1,6 +1,7 @@
 #include "databaseManager.h"
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 
 DatabaseManager::DatabaseManager() : hasActiveDatabase(false) {}
@@ -14,6 +15,11 @@ void DatabaseManager::createDatabase(const std::string& name) {
     }
 
     std::filesystem::create_directories(path);
+    
+    std::ofstream fout(path + "/database.meta");
+    fout << name << std::endl;
+    dbNames.push_back(name);
+
     std::cout << "Database created: " << name << "\n";
 }
 
@@ -55,4 +61,8 @@ Database* DatabaseManager::getCurrentDatabase() {
     }
 
     return &currentDatabase;
+}
+
+std::vector<std::string> DatabaseManager::listDatabase() const {
+    return dbNames;
 }

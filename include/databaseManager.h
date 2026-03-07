@@ -9,6 +9,7 @@ class DatabaseManager {
 private :
     Database currentDatabase;
     bool hasActiveDatabase;
+    std::vector<std::string> dbNames;
 
 public :
     DatabaseManager();
@@ -18,6 +19,8 @@ public :
     void useDatabase(const std::string& name);
 
     Database* getCurrentDatabase();
+
+    std::vector<std::string> listDatabase() const;
 };
 
 #endif

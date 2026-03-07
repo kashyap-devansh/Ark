@@ -188,6 +188,10 @@ std::string Table::getColumName(int index) const {
     return columns.at(index).getName();
 }
 
+DataType Table::getColumnType(int index) const {
+    return columns.at(index).getType();
+}
+
 bool Table::validateRow(const Row& row) const {
     if(row.getCellCount() != static_cast<int>(columns.size())) return false;
 

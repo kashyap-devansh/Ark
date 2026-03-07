@@ -10,8 +10,10 @@ static const std::vector<Keyword> KeywordTable = {
     {"LOAD",     TokenType::TOK_LOAD},
     {"TABLE",    TokenType::TOK_TABLE},
     {"TABLES",   TokenType::TOK_TABLES},
-    {"COLUMNS",  TokenType::TOK_COLUMN},
+    {"COLUMN",   TokenType::TOK_COLUMN},
+    {"COLUMNS",  TokenType::TOK_COLUMNS},
     {"DATABASE", TokenType::TOK_DATABASE},
+    {"DATABASES",TokenType::TOK_DATABASES},
     {"USE",      TokenType::TOK_USE},
     {"INSERT",   TokenType::TOK_INSERT},
     {"INTO",     TokenType::TOK_INTO},
@@ -31,6 +33,7 @@ static const std::vector<Keyword> KeywordTable = {
     {"NOT",      TokenType::TOK_NOT},
     {"TRUE",     TokenType::TOK_TRUE},
     {"FALSE",    TokenType::TOK_FALSE},
+    {"NULL",     TokenType::TOK_NULL},
 };
 
 static TokenType checkKeyword(const std::string& word) {
@@ -112,7 +115,7 @@ Token Tokenizer::nextToken() {
         return Token(type, word, tokenLine, tokenColumn);
     }
 
-    if(std::isdigit(ch) || (ch == '-' && std::isdigit(input[position + 1]))) {
+    if(std::isdigit(ch) || (ch == '-' && ( position + 1 < input.size() ) && std::isdigit(input[position + 1]))) {
         std::string number;
 
         if(ch == '-') {
@@ -152,22 +155,22 @@ Token Tokenizer::nextToken() {
         return Token(TokenType::TOK_STRING, str, tokenLine, tokenColumn);
     }
 
-    if(ch == '=' && input[position + 1] == '=') {
+    if(ch == '=' && ( position + 1 < input.size() ) && input[position + 1] == '=') {
         advance(); advance();
         return Token(TokenType::TOK_EQUAL_EQUAL, "==", tokenLine, tokenColumn);
     }
 
-    if(ch == '!' && input[position + 1] == '=') {
+    if(ch == '!' && ( position + 1 < input.size() ) && input[position + 1] == '=') {
         advance(); advance();
         return Token(TokenType::TOK_NOT_EQUAL, "!=", tokenLine, tokenColumn);
     }
 
-    if(ch == '>' && input[position + 1] == '=') {
+    if(ch == '>' && ( position + 1 < input.size() ) && input[position + 1] == '=') {
         advance(); advance();
         return Token(TokenType::TOK_GREATER_EQUAL, ">=", tokenLine, tokenColumn);
     }
 
-    if(ch == '<' && input[position + 1] == '=') {
+    if(ch == '<' && ( position + 1 < input.size() ) && input[position + 1] == '=') {
         advance(); advance();
         return Token(TokenType::TOK_LESS_EQUAL, "<=", tokenLine, tokenColumn);
     }
@@ -181,8 +184,8 @@ Token Tokenizer::nextToken() {
         case '(' : return Token(TokenType::TOK_LPAREN, "(", tokenLine, tokenColumn);
         case ')' : return Token(TokenType::TOK_RPAREN, ")", tokenLine, tokenColumn);
         case ',' : return Token(TokenType::TOK_COMMA, ",", tokenLine, tokenColumn);
-        case '*': return Token(TokenType::TOK_STAR, "*", tokenLine, tokenColumn);
-        case ';': return Token(TokenType::TOK_SEMICOLON, ";", tokenLine, tokenColumn);
+        case '*' : return Token(TokenType::TOK_STAR, "*", tokenLine, tokenColumn);
+        case ';' : return Token(TokenType::TOK_SEMICOLON, ";", tokenLine, tokenColumn);
     }
 
     return Token(TokenType::UNKOWN, std::string(1, ch), tokenLine, tokenColumn);
