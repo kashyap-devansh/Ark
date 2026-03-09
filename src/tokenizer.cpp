@@ -24,6 +24,8 @@ static const std::vector<Keyword> KeywordTable = {
     {"UPDATE",   TokenType::TOK_UPDATE},
     {"SET",      TokenType::TOK_SET},
     {"WHERE",    TokenType::TOK_WHERE},
+    {"LIMIT",    TokenType::TOK_LIMIT},
+    {"LIKE",     TokenType::TOK_LIKE},
     {"INT",      TokenType::TOK_INT},
     {"DOUBLE",   TokenType::TOK_DOUBLE},
     {"STRING",   TokenType::TOK_STRING_TYPE},

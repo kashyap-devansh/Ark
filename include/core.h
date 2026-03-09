@@ -59,6 +59,11 @@ public :
     std::string getString() const;
     bool getBool() const;
 
+    bool isInt() const;
+    bool isDouble() const;
+    bool isString() const;
+    bool isBool() const;
+
     void setInt(int value);
     void setDouble(double value);
     void setString(const std::string& value);
@@ -115,6 +120,8 @@ public :
     int getColumnCount() const;
     std::string getColumName(int index) const;
     DataType getColumnType(int index) const;
+
+    int getRowCount() const;
 
     void insertRow(const Row& row);
 

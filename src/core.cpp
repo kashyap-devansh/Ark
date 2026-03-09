@@ -25,26 +25,58 @@ Cell::Cell() : type(DataType::NONE), stringValue(""), isNull(true) {
 
 Cell::Cell(int value) : type(DataType::INT) {
     this->value.Int = value;
+    isNull = false;
 }
 
 Cell::Cell(double value) : type(DataType::DOUBLE) {
     this->value.Double = value;
+    isNull = false;
 }
 
 Cell::Cell(const std::string& value) : type(DataType::STRING) {
     stringValue = value;
+    isNull = false;
 }
 
 Cell::Cell(bool value) : type(DataType::BOOL) {
     this->value.Bool = value;
+    isNull = false;
 }
 
 DataType Cell::getType() const {
     return type;
 }
 
+int Cell::getInt() const {
+    return value.Int;
+}
+
+double Cell::getDouble() const {
+    return value.Double;
+}
+
+std::string Cell::getString() const {
+    return stringValue;
+}
+
 bool Cell::getBool() const {
     return value.Bool;
+}
+
+bool Cell::isInt() const {
+    return type == DataType::INT && !isNull;
+}
+
+bool Cell::isDouble() const {
+    return type == DataType::DOUBLE && !isNull;
+}
+
+bool Cell::isString() const {
+    return type == DataType::STRING && !isNull;
+}
+
+bool Cell::isBool() const {
+    return type == DataType::BOOL && !isNull;
 }
 
 void Cell::setInt(int value) {
@@ -190,6 +222,10 @@ std::string Table::getColumName(int index) const {
 
 DataType Table::getColumnType(int index) const {
     return columns.at(index).getType();
+}
+
+int Table::getRowCount() const {
+    return static_cast<int>(rows.size());
 }
 
 bool Table::validateRow(const Row& row) const {

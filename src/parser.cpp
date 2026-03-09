@@ -91,11 +91,11 @@ Cell Parser::parseValue() {
 }
 
 int Parser::getColumnIndex(Table* table, const std::string& columnName) {
-    for(int i = 0; i < table->selectAll()[0].getCellCount(); i++) {
-        if(table->selectAll().at(0).getCell(i).toString() == columnName) return i;
+    for(int i = 0; i < table->getColumnCount(); i++) {
+        if(table->getColumName(i) == columnName) return i;
     }
 
-    return 0;
+    return -1;
 }
 
 void Parser::parse(DatabaseManager& manager) {
@@ -472,12 +472,21 @@ void Parser::parseUpdate(DatabaseManager& manager) {
 
     Cell newValue = parseValue();
 
+    int updateColIndex = getColumnIndex(table, columnName);
+
+    if(updateColIndex == -1) {
+        std::cerr << "No column found with name: " << columnName << "\n";
+        exit(1);
+    }
+
     if(match(TokenType::TOK_SEMICOLON)) {
         consume(TokenType::TOK_SEMICOLON);
 
-        int colIndex = getColumnIndex(table, columnName);
+        auto rows = table->selectAll();
 
-        for(int i = 0; i < table->selectAll().size(); i++) table->updateCell(i, colIndex, newValue);
+        for(int i = 0; i < rows.size(); i++) {
+            table->updateCell(i, updateColIndex, newValue);
+        }
     }
     else if(match(TokenType::TOK_WHERE)) {
         consume(TokenType::TOK_WHERE);
@@ -485,20 +494,57 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         std::string colName = current.getLexeme();
         consume(TokenType::TOK_IDENTIFIER);
 
+        int colNumber;
+        bool colFound = false;
+
+        for(int i = 0; i < table->getColumnCount(); i++) {
+            if(table->getColumName(i) == colName) {
+                colNumber = i;
+                colFound = true;
+                break;
+            }
+        }
+
+        if(!colFound) {
+            std::cerr << "no column found with name : " << colName << std::endl;
+            exit(1);
+        }
+
         bool matched = ( match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
 
         if(matched) {
+
             TokenType op = current.getType();
             consume(op);
 
-            switch(op) {
-                case TokenType::TOK_EQUAL_EQUAL : {
-                    
+            Cell compVal = parseValue();
+
+            auto rows = table->selectAll();
+
+            for(int i = 0; i < rows.size(); i++) {
+
+                Cell val = rows[i].getCell(colNumber);
+
+                bool condition = false;
+
+                switch(op) {
+
+                    case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
+                    case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
+                    case TokenType::TOK_GREATER : condition = (val > compVal); break;
+                    case TokenType::TOK_LESS : condition = (val < compVal); break;
+                    case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
+                    case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
+                    default : break;
+                }
+
+                if(condition) {
+                    table->updateCell(i, updateColIndex, newValue);
                 }
             }
-
-
         }
+
+        consume(TokenType::TOK_SEMICOLON);
     }
 }
 
@@ -511,10 +557,178 @@ void Parser::parseDelete(DatabaseManager& manager) {
 
     std::string tableName = current.getLexeme();
     consume(TokenType::TOK_IDENTIFIER);
-    consume(TokenType::TOK_SEMICOLON);
 
     Table* table = db->getTable(tableName);
 
-    while(!table->selectAll().empty())
-        table->deleteRow(0);   
+    if(match(TokenType::TOK_SEMICOLON)) {
+        consume(TokenType::TOK_SEMICOLON);
+
+        while(!table->selectAll().empty()) table->deleteRow(0);
+    }
+    else if(match(TokenType::TOK_WHERE)) {
+        consume(TokenType::TOK_WHERE);
+
+        std::string columnName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        int colNumber;
+        bool colFound = false;
+
+        for(int i = 0; i < table->getColumnCount(); i++) {
+            if(table->getColumName(i) == columnName) {
+                colNumber = i;
+                colFound = true;
+                break;
+            }
+        }
+
+        if(!colFound) {
+            std::cerr << "no column found with name : " << columnName << std::endl;
+            exit(1);
+        }
+
+        if(match(TokenType::TOK_LIKE)) {
+
+            if(!(table->getColumnType(colNumber) == DataType::STRING)) {
+                std::cerr << "To use \"LIKE\" the column must be of type string\n";
+                exit(1);
+            }
+
+            consume(TokenType::TOK_LIKE);
+
+            bool isString = match(TokenType::TOK_STRING);
+
+            if(!isString) {
+                std::cerr << "To delete like the give value should be string \n";
+                exit(1);
+            }
+
+            std::string wordLike = current.getLexeme();
+            consume(TokenType::TOK_STRING);
+
+            if(!(wordLike[1] == '%')) {
+                std::cerr << "Invalid syntax\n";
+                exit(1);
+            }
+
+            char findWordWith = wordLike[0];
+            std::vector<Row> rows = table->selectAll();
+            bool found = false;
+
+            for(int i = rows.size() - 1; i >= 0; i--) {
+                Cell val = rows[i].getCell(colNumber);
+                char firstLetter = val.getString()[0];
+
+                if(findWordWith == firstLetter) {
+                    found = true;
+
+                    table->deleteRow(i);
+                }
+            }
+
+            if(!found) {
+                std::cerr << "No Cell found with first letter : " << findWordWith << "\n";
+                exit(1);
+            }
+        }
+
+        bool matched = ( match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
+
+        if(matched) {
+            TokenType op = current.getType();
+            consume(op);
+
+            Cell compVal = parseValue();
+
+            std::vector<Row> rows = table->selectAll();
+
+            if(match(TokenType::TOK_LIMIT)) {
+                consume(TokenType::TOK_LIMIT);
+
+                Cell climit = parseValue();
+
+                if(!climit.isInt()) {
+                    std::cerr << "LIMIT value must be INT\n";
+                    exit(1);
+                }
+
+                int limit = climit.getInt();
+
+                if(limit < 0) {
+                    std::cerr << "LIMIT cannot be negative\n";
+                    exit(1);
+                }
+
+                int deleted = 0;
+
+                for(int i = rows.size() - 1; i >= 0; i--) {
+
+                    Cell val = rows[i].getCell(colNumber);
+
+                    bool condition = false;
+
+                    switch(op) {
+                        case TokenType::TOK_EQUAL_EQUAL: condition = (val == compVal); break;
+                        case TokenType::TOK_NOT_EQUAL: condition = (val != compVal); break;
+                        case TokenType::TOK_GREATER: condition = (val > compVal); break;
+                        case TokenType::TOK_LESS: condition = (val < compVal); break;
+                        case TokenType::TOK_GREATER_EQUAL: condition = (val >= compVal); break;
+                        case TokenType::TOK_LESS_EQUAL: condition = (val <= compVal); break;
+                        default: break;
+                    }
+
+                    if(condition) {
+                        table->deleteRow(i);
+                        deleted++;
+
+                        if(deleted == limit) break;
+                    }
+                }
+            }
+            else {
+                for(int i = rows.size() - 1; i >= 0; i--) {
+                    Cell val = rows[i].getCell(colNumber);
+
+                    bool condition = false;
+
+                    switch(op) {
+                        case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
+                        case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
+                        case TokenType::TOK_GREATER : condition = (val > compVal); break;
+                        case TokenType::TOK_LESS : condition = (val < compVal); break;
+                        case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
+                        case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
+                        default : break;
+                    }
+
+                    if(condition) table->deleteRow(i);
+                } 
+            }
+        }
+
+        consume(TokenType::TOK_SEMICOLON);
+    }
+    else if(match(TokenType::TOK_LIMIT)) {
+        consume(TokenType::TOK_LIMIT);
+
+        Cell climit = parseValue();
+
+        if(!climit.isInt()) {
+            std::cerr << "LIMIT value must be INT\n";
+            exit(1);
+        }
+
+        int limit = climit.getInt();
+
+        if(limit < 0) {
+            std::cerr << "LIMIT cannot be negative\n";
+            exit(1);
+        }
+
+        limit = std::min(limit, table->getRowCount());
+
+        for(int i = 0; i < limit; i++) table->deleteRow(0);
+        
+        consume(TokenType::TOK_SEMICOLON);
+    }
 }

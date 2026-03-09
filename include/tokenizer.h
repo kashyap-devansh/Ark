@@ -39,6 +39,8 @@ enum class TokenType {
     TOK_UPDATE,            // UPDATE
     TOK_SET,               // SET
     TOK_WHERE,             // WHERE
+    TOK_LIMIT,             // LIMIT
+    TOK_LIKE,              // LIKE
 
     // ----- Data Types -----
     TOK_INT,               // INT

@@ -1,12 +1,10 @@
-# Ignore VS Code settings
 .vscode/
 
-# Ignore compiled files
 *.exe
 *.out
 *.o
 *.obj
+*.txt
 
-# Ignore build folders
 build/
 desktop.ini
