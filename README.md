@@ -6,55 +6,81 @@ Ark is a custom, lightweight database engine and SQL-like query language interpr
 
 ## Overview
 
-Ark provides basic relational database capabilities, allowing users to parse and execute SQL-like statements. The project is built from scratch and includes its own custom tokenizer, expression parser, and core execution engine.
+Ark provides relational database capabilities, allowing users to parse and execute basic SQL-like statements. The project is built from scratch and includes its own custom tokenizer, expression parser, and core execution engine. It handles custom data storage and memory management to simulate a functioning database environment.
 
-## Features (Current & Planned)
+## Current Features
 
-- **Databases**: Create and switch between databases (`CREATE DATABASE`, `USE`).
-- **Tables**: Define tables with different data types (`CREATE TABLE`).
-- **Data Insertion**: Insert rows into tables (`INSERT INTO`).
-- **Querying**: Basic querying of data from tables (`SELECT`).
-- *More features are actively being developed...*
+The following features have been implemented and are currently supported:
 
-## Architecture
+- **Database Management**: Create, drop, and switch between databases (`CREATE DATABASE`, `DROP DATABASE`, `USE`).
+- **Table Operations**: Define and drop tables (`CREATE TABLE`, `DROP TABLE`).
+- **Data Types**: Support for `INT`, `DOUBLE`, `STRING`, and `BOOL` data types.
+- **Data Manipulation (DML)**: 
+  - Insert records (`INSERT INTO`).
+  - Retrieve basic data (`SELECT * FROM`, `SELECT col1, col2 FROM`).
+  - Update specific records (`UPDATE`).
+  - Delete records (`DELETE FROM`).
+- **Navigation & Inspection**: See available databases, tables, and column structures (`SHOW DATABASES`, `SHOW TABLES`, `SHOW COLUMNS`).
+- **Persistence**: Save and load databases entirely to and from disk (`SAVE`, `LOAD`).
 
-The project consists of several core components:
-- **Tokenizer (`tokenizer.cpp` / `tokenizer.h`)**: Lexical analysis of the `.ark` query files.
-- **Parser (`parser.cpp` / `parser.h`)**: Parses tokens into an Abstract Syntax Tree (AST) representing database operations.
-- **Core Engine (`core.cpp` / `core.h`)**: Executes the parsed database operations.
-- **Database Manager (`databaseManager.cpp` / `databaseManager.h`)**: Handles storage and retrieval of database schema and table data.
+*More advanced query filtering (e.g., `WHERE`, `LIKE`, `LIMIT`, `ORDER BY`) and graph systems are currently planned for future updates.*
+
+## Project Structure
+
+The project code is organized into the following structure:
+
+```text
+Ark/
+├── databases/              # Directory where database files (.tbl and .dat) are saved
+├── include/                # Header files for all system components
+│   ├── core.h              # Engine definitions (Cell, Column, Row, Table, Database)
+│   ├── databaseManager.h   # Orchestrates system databases
+│   ├── parser.h            # AST and query parsing structs
+│   └── tokenizer.h         # Lexical analysis definitions
+├── src/                    # Implementation source files
+│   ├── core.cpp            # Core engine execution logic
+│   ├── databaseManager.cpp # Database manager functionality
+│   ├── main.cpp            # Entry point for the interpreter
+│   ├── parser.cpp          # Parsing tokens into operations
+│   └── tokenizer.cpp       # Tokenizing raw queries
+├── .gitignore              # Ignored files for version control
+├── ArkTest.ark             # Example SQL script to test the engine
+└── README.md               # Project documentation
+```
 
 ## Example Usage
 
 You can write Ark statements in a `.ark` file. For example (`ArkTest.ark`):
 
 ```sql
-CREATE DATABASE testdb;
-USE testdb;
+CREATE DATABASE school;
+USE school;
 
-CREATE TABLE users (id INT, name STRING, age INT);
+CREATE TABLE students (id INT, name STRING, gpa DOUBLE, enrolled BOOL);
 
-INSERT INTO users VALUES (1, "Alice", 25);
-INSERT INTO users VALUES (2, "Bob", 30);
+INSERT INTO students VALUES (1, "Alice", 3.9, true);
+INSERT INTO students VALUES (2, "Bob", 3.5, false);
 
-SELECT * FROM users;
-SELECT name, age FROM users;
+SELECT * FROM students;
+SELECT name, gpa FROM students;
+
+SAVE;
 ```
 
 ## Getting Started
 
-To compile the project, you need a C++ compiler (like g++).
+To compile the project, you need a C++ compiler (like `g++`).
 
 ```bash
-# Example compilation command (assuming all src files are compiled together)
-g++ src/main.cpp src/core.cpp src/databaseManager.cpp src/parser.cpp src/tokenizer.cpp -I include -o ark.exe
+# Example compilation command compiling all source files together
+g++ -Iinclude src/*.cpp -o program
 ```
 
 Run the executable by passing your script, or using it interactively (depending on implementation):
 
 ```bash
-./ark.exe
+./program.exe <fileName.ark>
 ```
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
