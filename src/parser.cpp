@@ -210,96 +210,108 @@ void Parser::parseUse(DatabaseManager& manager) {
 
 void Parser::parseShow(DatabaseManager& manager) {
     consume(TokenType::TOK_SHOW);
-    
+
     if(match(TokenType::TOK_TABLES)) {
-        consume(TokenType::TOK_TABLES);
-        consume(TokenType::TOK_SEMICOLON);
-
-        Database* db = manager.getCurrentDatabase();
-        if(!db) return;
-
-        auto tables = db->listTables();
-
-        for(const auto& name : tables) std::cout << name << "\n";
+        parseShowTables(manager);
     }
     else if(match(TokenType::TOK_DATABASES)) {
-        consume(TokenType::TOK_DATABASES);
-        consume(TokenType::TOK_SEMICOLON);
-
-        std::vector<std::string> dbs = manager.listDatabase();
-
-        for(const auto& name : dbs) std::cout << name << "\n";
+        parseShowDatabases(manager);
     }
     else if(match(TokenType::TOK_COLUMNS)) {
-        consume(TokenType::TOK_COLUMNS);
-        consume(TokenType::TOK_FROM);
-        
-        Database* db = manager.getCurrentDatabase();
-        if(!db) return;
-
-        std::string tableName = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
-        consume(TokenType::TOK_SEMICOLON);
-
-        Table* table = db->getTable(tableName);
-        if(!table) {
-            std::cerr << "Table not found: " << tableName << "\n";
-            return;
-        }
-
-        std::vector<int> columnIndexes;
-        for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
-
-        std::vector<int> widths;
-        for(int i = 0; i < columnIndexes.size(); i++) {
-            widths.push_back(table->getColumName(columnIndexes[i]).length());
-        }
-
-        for(int i = 0; i < columnIndexes.size(); i++) {
-            switch(table->getColumnType(columnIndexes[i])) {
-                case DataType::INT : if(3 > widths[i]) widths.at(i) = 3; break;
-                case DataType::DOUBLE : if(6 > widths[i]) widths.at(i) = 6; break;
-                case DataType::STRING : if(6 > widths[i]) widths.at(i) = 6; break;
-                case DataType::BOOL : if(4 > widths[i]) widths.at(i) = 4; break;
-                case DataType::NONE : if(4 > widths[i]) widths.at(i) = 4; break;
-            }
-        }
-
-        printBorder(widths, columnIndexes);
-
-        std::cout << "|";
-
-        for(int i = 0; i < columnIndexes.size(); i++) {
-            std::string colName = table->getColumName(columnIndexes[i]);
-            std::cout << " " << colName;
-
-            for(int j = colName.length(); j < widths[i]; j++) std::cout << " ";
-            std::cout << " |";
-        }
-        std::cout << "\n";
-
-        printBorder(widths, columnIndexes);
-
-        std::cout << "|";
-        for(int i = 0; i < columnIndexes.size(); i++) {
-            int typeLength = 0;
-
-            switch(table->getColumnType(columnIndexes[i])) {
-                case DataType::INT : std::cout << " " << "INT"; typeLength = 3; break;
-                case DataType::DOUBLE : std::cout << " " << "DOUBLE"; typeLength = 6; break;
-                case DataType::STRING : std::cout << " " << "STRING"; typeLength = 6; break;
-                case DataType::BOOL : std::cout << " " << "BOOL"; typeLength = 4; break;
-                case DataType::NONE : std::cout << " " << "NONE"; typeLength = 4; break;
-            }
-
-            for(int j = typeLength; j < widths[i]; j++) std::cout << " ";
-            std::cout << " |";
-        }
-        
-        std::cout << "\n";
-
-        printBorder(widths, columnIndexes);
+        parseShowColumns(manager);
     }
+}
+
+void Parser::parseShowTables(DatabaseManager& manager) {
+    consume(TokenType::TOK_TABLES);
+    consume(TokenType::TOK_SEMICOLON);
+
+    Database* db = manager.getCurrentDatabase();
+    if(!db) return;
+
+    std::vector<std::string> tables = db->listTables();
+
+    for(const auto& name : tables) std::cout << name << "\n";
+}
+
+void Parser::parseShowDatabases(DatabaseManager& manager) {
+    consume(TokenType::TOK_DATABASES);
+    consume(TokenType::TOK_SEMICOLON);
+
+    std::vector<std::string> dbs = manager.listDatabase();
+
+    for(const auto& name : dbs) std::cout << name << "\n";
+}
+
+void Parser::parseShowColumns(DatabaseManager& manager) {
+    consume(TokenType::TOK_COLUMNS);
+    consume(TokenType::TOK_FROM);
+
+    Database* db = manager.getCurrentDatabase();
+    if(!db) return;
+
+    std::string tableName = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+    consume(TokenType::TOK_SEMICOLON);
+
+    Table* table = db->getTable(tableName);
+    if(!table) {
+        std::cerr << "Table not found: " << tableName << "\n";
+        return;
+    }
+
+    std::vector<int> columnIndexes;
+    for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
+
+    std::vector<int> widths;
+    for(int i = 0; i < columnIndexes.size(); i++) {
+        widths.push_back(table->getColumName(columnIndexes[i]).length());
+    }
+
+    for(int i = 0; i < columnIndexes.size(); i++) {
+        switch(table->getColumnType(columnIndexes[i])) {
+            case DataType::INT : if(3 > widths[i]) widths.at(i) = 3; break;
+            case DataType::DOUBLE : if(6 > widths[i]) widths.at(i) = 6; break;
+            case DataType::STRING : if(6 > widths[i]) widths.at(i) = 6; break;
+            case DataType::BOOL : if(4 > widths[i]) widths.at(i) = 4; break;
+            case DataType::NONE : if(4 > widths[i]) widths.at(i) = 4; break; 
+        }
+    }
+
+    printBorder(widths, columnIndexes);
+
+    std::cout << "|";
+
+    for(int i = 0; i < columnIndexes.size(); i++) {
+        std::string colName = table->getColumName(columnIndexes[i]);
+        std::cout << " " << colName;
+
+        for(int j = colName.length(); j < widths[i]; j++) std::cout << " ";
+        std::cout << " |";
+    }
+    std::cout << "\n";
+
+    printBorder(widths, columnIndexes);
+
+    std::cout << "|";
+    for(int i = 0; i < columnIndexes.size(); i++) {
+        int typeLength = 0;
+
+        switch(table->getColumnType(columnIndexes[i])) {
+            case DataType::INT : std::cout << " " << "INT"; typeLength = 3; break;
+            case DataType::DOUBLE : std::cout << " " << "DOUBLE"; typeLength = 6; break;
+            case DataType::STRING : std::cout << " " << "STRING"; typeLength = 6; break;
+            case DataType::BOOL : std::cout << " " << "BOOL"; typeLength = 4; break;
+            case DataType::NONE : std::cout << " " << "NONE"; typeLength = 4; break;
+        }
+
+        for(int j = typeLength; j < widths[i]; j++) std::cout << " ";
+        std::cout << " |";
+    }
+    
+    std::cout << "\n";
+
+    printBorder(widths, columnIndexes);
 }
 
 void Parser::parseInsert(DatabaseManager& manager) {
@@ -342,6 +354,90 @@ void Parser::parseInsert(DatabaseManager& manager) {
     consume(TokenType::TOK_SEMICOLON);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void Parser::parseSelect(DatabaseManager& manager) {
     consume(TokenType::TOK_SELECT);
 
@@ -350,7 +446,6 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
     if(match(TokenType::TOK_STAR)) {
         consume(TokenType::TOK_STAR);
-
         selectAll = true;
     }
     else {
@@ -371,7 +466,6 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
     std::string tableName = current.getLexeme();
     consume(TokenType::TOK_IDENTIFIER);
-    consume(TokenType::TOK_SEMICOLON);
 
     Table* table = db->getTable(tableName);
     if(!table) {
@@ -379,11 +473,110 @@ void Parser::parseSelect(DatabaseManager& manager) {
         return;
     }
 
+    int printWhere = 0;
+    std::vector<int> whereColumns;
+
+    if(match(TokenType::TOK_WHERE)) {
+        consume(TokenType::TOK_WHERE);
+
+        std::string colName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        int colNumber;
+        bool colFound = false;
+
+        for(int i = 0; i < table->getColumnCount(); i++) {
+            if(table->getColumName(i) == colName) {
+                colNumber = i;
+                colFound = true;
+                break;
+            }
+        }
+
+        if(!colFound) {
+            std::cerr << "no column found with name : " << colName << std::endl;
+            exit(1);
+        }
+
+        if(match(TokenType::TOK_LIKE)) {
+            consume(TokenType::TOK_LIKE);
+
+            if(!(table->getColumnType(colNumber) == DataType::STRING)) {
+                std::cerr << "To use \"LIKE\" the column must be of type string\n";
+                exit(1);
+            }
+
+            bool isString = match(TokenType::TOK_STRING);
+
+            if(!isString) {
+                std::cerr << "To select like the given values should be string \n";
+                exit(1);
+            }
+
+            std::string wordLike = current.getLexeme();
+            consume(TokenType::TOK_STRING);
+
+            if(!(wordLike[1] == '%')) {
+                std::cerr << "Invalid syntax\n";
+                exit(1);
+            }
+
+            char findWordWith = wordLike[0];
+            std::vector<Row> rows = table->selectAll();
+            bool found = false;
+
+            for(int i = 0; i < table->getRowCount(); i++) {
+                Cell val = rows[i].getCell(colNumber);
+                char firstLetter = val.getString()[0];
+
+                if(findWordWith == firstLetter) {
+                    found = true;
+                    printWhere = 1;
+
+                    whereColumns.push_back(i);
+                }
+            }
+        }
+
+        bool matched = (match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
+
+        if(matched) {
+            TokenType op = current.getType();
+            consume(op);
+
+            Cell compVal = parseValue();
+
+            auto rows = table->selectAll();
+
+            for(int i = 0; i <table->getRowCount(); i++) {
+                Cell val = rows[i].getCell(colNumber);
+
+                bool condition = false;
+
+                switch(op) {
+                    case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
+                    case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
+                    case TokenType::TOK_GREATER : condition = (val > compVal); break;
+                    case TokenType::TOK_LESS : condition = (val < compVal); break;
+                    case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
+                    case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
+                    default : break;
+                }
+
+                if(condition) {
+                    printWhere = 1;
+                    whereColumns.push_back(i);
+                }
+            }
+        }
+    }
+
+    consume(TokenType::TOK_SEMICOLON);
+
     std::vector<int> columnIndexes;
 
     if(selectAll) {
-        for(int i = 0; i < table->getColumnCount(); i++) 
-            columnIndexes.push_back(i);
+        for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
     }
     else {
         for(const std::string& colName : selectedColumns) {
@@ -432,7 +625,21 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
     printBorder(widths, columnIndexes);
 
-    for(const Row& row : table->selectAll()) {
+    for(int r = 0; r < table->getRowCount(); r++) {
+
+        if(printWhere) {
+            bool allowed = false;
+            for(int idx : whereColumns) {
+                if(idx == r) {
+                    allowed = true;
+                    break;
+                }
+            }
+            if(!allowed) continue;
+        }
+
+        const Row row = table->selectAll()[r];
+
         std::cout << "|";
 
         for(int i = 0; i < columnIndexes.size(); i++) {
@@ -445,8 +652,90 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
         std::cout << "\n";
     }
+
     printBorder(widths, columnIndexes);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void Parser::parseUpdate(DatabaseManager& manager) {
     consume(TokenType::TOK_UPDATE);
@@ -599,7 +888,7 @@ void Parser::parseDelete(DatabaseManager& manager) {
             bool isString = match(TokenType::TOK_STRING);
 
             if(!isString) {
-                std::cerr << "To delete like the give value should be string \n";
+                std::cerr << "To delete like the given value should be string \n";
                 exit(1);
             }
 
@@ -628,7 +917,6 @@ void Parser::parseDelete(DatabaseManager& manager) {
 
             if(!found) {
                 std::cerr << "No Cell found with first letter : " << findWordWith << "\n";
-                exit(1);
             }
         }
 

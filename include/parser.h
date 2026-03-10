@@ -24,6 +24,10 @@ private :
     void parseUpdate(DatabaseManager& manager);
     void parseDelete(DatabaseManager& manager);
 
+    void parseShowTables(DatabaseManager& manager);
+    void parseShowDatabases(DatabaseManager& manager);
+    void parseShowColumns(DatabaseManager& manager);
+
     DataType parseDataType();
     Cell parseValue();
     int getColumnIndex(Table* table, const std::string& columnName);
