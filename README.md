@@ -1,33 +1,71 @@
-# Ark
-
-Ark is a custom, lightweight database engine and SQL-like query language interpreter implemented in C++. 
+# 🐘 Ark
 
 > **Note:** 🚧 This project is currently **under development** and is actively being worked on. Features and syntax may be subject to change.
 
-## Overview
+## 📖 Overview
 
-Ark provides relational database capabilities, allowing users to parse and execute basic SQL-like statements. The project is built from scratch and includes its own custom tokenizer, expression parser, and core execution engine. It handles custom data storage and memory management to simulate a functioning database environment.
+**Ark** is a custom, lightweight database engine and SQL-like query language interpreter implemented in C++. 
 
-## Current Features
+It provides relational database capabilities, allowing users to parse and execute basic SQL-like statements. The project is built from scratch and includes its own custom tokenizer, expression parser, and core execution engine. It handles custom data storage and memory management to simulate a functioning database environment.
 
-The following features have been implemented and are currently supported:
+## ✨ Current Features
 
 - **Database Management**: Create, drop, and switch between databases (`CREATE DATABASE`, `DROP DATABASE`, `USE`).
 - **Table Operations**: Define and drop tables (`CREATE TABLE`, `DROP TABLE`).
-- **Data Types**: Support for `INT`, `DOUBLE`, `STRING`, and `BOOL` data types.
-- **Data Manipulation (DML)**: 
-  - Insert records (`INSERT INTO`).
-  - Retrieve basic data (`SELECT * FROM`, `SELECT col1, col2 FROM`).
+- **Data Types**: Full support for `INT`, `DOUBLE`, `STRING`, and `BOOL` data types.
+- **Advanced Data Manipulation (DML)**: 
+  - Insert single or multiple records at once (`INSERT INTO`).
+  - Retrieve data with column selection (`SELECT`).
   - Update specific records (`UPDATE`).
-  - Delete records (`DELETE FROM`).
-- **Navigation & Inspection**: See available databases, tables, and column structures (`SHOW DATABASES`, `SHOW TABLES`, `SHOW COLUMNS`).
+  - Delete records (`DELETE`).
+  - **Query Filtering**: Powerful conditional filtering using `WHERE` with multiple operators (`==`, `!=`, `<`, `>`, `<=`, `>=`).
+  - **Pattern Matching**: String matching using `LIKE '<c>%'`.
+  - **Limiting Results**: Restrict modifications or deletions using `LIMIT <n>`.
+- **Navigation & Inspection**: Introspect databases, tables, and column structures (`SHOW DATABASES`, `SHOW TABLES`, `SHOW COLUMNS`).
 - **Persistence**: Save and load databases entirely to and from disk (`SAVE`, `LOAD`).
 
-*More advanced query filtering (e.g., `WHERE`, `LIKE`, `LIMIT`, `ORDER BY`) and graph systems are currently planned for future updates.*
+*Note: Graph systems and compound conditions (AND/OR) are currently planned for future updates.*
 
-## Project Structure
+## 🗂️ Supported SQL Syntax
 
-The project code is organized into the following structure:
+Ark supports a custom subset of standard SQL. Here is a quick reference guide:
+
+```sql
+-- Database Commands
+CREATE DATABASE <name>;
+DROP DATABASE <name>;
+USE <database>;
+SHOW DATABASES;
+
+-- Table Commands
+CREATE TABLE <name> (<col> <type>, ...);
+DROP TABLE <name>;
+SHOW TABLES;
+SHOW COLUMNS FROM <table>;
+
+-- Insert Data
+INSERT INTO <table> VALUES (<val>, ...);
+INSERT INTO <table> VALUES (<val>, ...), (<val>, ...);
+
+-- Query Data
+SELECT * FROM <table>;
+SELECT <col1>, <col2> FROM <table> WHERE <col> == <val>;
+SELECT * FROM <table> WHERE <col> LIKE '<c>%';
+
+-- Update Data
+UPDATE <table> SET <col> = <val> WHERE <col> == <val> LIMIT <n>;
+
+-- Delete Data
+DELETE FROM <table> WHERE <col> > <val>;
+
+-- Persistence
+SAVE;
+LOAD;
+```
+
+## 🏗️ Project Structure
+
+The project code is organized logically to separate lexical analysis, parsing, and execution:
 
 ```text
 Ark/
@@ -43,44 +81,48 @@ Ark/
 │   ├── main.cpp            # Entry point for the interpreter
 │   ├── parser.cpp          # Parsing tokens into operations
 │   └── tokenizer.cpp       # Tokenizing raw queries
-├── .gitignore              # Ignored files for version control
 ├── ArkTest.ark             # Example SQL script to test the engine
 └── README.md               # Project documentation
 ```
 
-## Example Usage
+## 🚀 Example Usage
 
-You can write Ark statements in a `.ark` file. For example (`ArkTest.ark`):
+You can write Ark statements in a `.ark` script file. For example (`ArkTest.ark`):
 
 ```sql
-CREATE DATABASE school;
-USE school;
+CREATE DATABASE testdb;
+USE testdb;
 
-CREATE TABLE students (id INT, name STRING, gpa DOUBLE, enrolled BOOL);
+CREATE TABLE users (id INT, name STRING, age INT);
 
-INSERT INTO students VALUES (1, "Alice", 3.9, true);
-INSERT INTO students VALUES (2, "Bob", 3.5, false);
+INSERT INTO users VALUES (1, "Alice", 25);
+INSERT INTO users VALUES (2, "Bob", 30);
+INSERT INTO users VALUES (3, "Charlie", 35);
 
-SELECT * FROM students;
-SELECT name, gpa FROM students;
+UPDATE users SET age = 18 WHERE id >= 1 LIMIT 3;
 
+SELECT * FROM users;
 SAVE;
 ```
 
-## Getting Started
+## 🛠️ Getting Started
 
+### Prerequisites
 To compile the project, you need a C++ compiler (like `g++`).
 
+### Compilation
+Compile the project by passing all source files and including the header directory:
+
 ```bash
-# Example compilation command compiling all source files together
 g++ -Iinclude src/*.cpp -o program
 ```
 
-Run the executable by passing your script, or using it interactively (depending on implementation):
+### Execution
+Run the executable by passing your script file containing Ark commands:
 
 ```bash
-./program.exe <fileName.ark>
+./program.exe ArkTest.ark
 ```
 
-## License
+## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
