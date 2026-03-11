@@ -755,17 +755,29 @@ void Parser::parseUpdate(DatabaseManager& manager) {
 
     consume(TokenType::TOK_SET);
 
-    std::string columnName = current.getLexeme();
-    consume(TokenType::TOK_IDENTIFIER);
-    consume(TokenType::TOK_EQUAL);
+    std::vector<std::string> columnNames;
+    std::vector<int> updateColumnIndexes;
+    std::vector<Cell> newValues;
+    int columnCounter = 0;
 
-    Cell newValue = parseValue();
+    while(!(match(TokenType::TOK_WHERE) || match(TokenType::TOK_SEMICOLON))) {
+        columnNames.push_back(current.getLexeme());
+        updateColumnIndexes.push_back(getColumnIndex(table, columnNames[columnCounter]));
+        columnCounter++;
 
-    int updateColIndex = getColumnIndex(table, columnName);
+        consume(TokenType::TOK_IDENTIFIER);
+        consume(TokenType::TOK_EQUAL);
 
-    if(updateColIndex == -1) {
-        std::cerr << "No column found with name: " << columnName << "\n";
-        exit(1);
+        newValues.push_back(parseValue());
+
+        for(int i = 0; i < updateColumnIndexes.size(); i++) {
+            if(updateColumnIndexes[i] == -1) {
+                std::cerr << "No column found with name: " << columnNames[i] << "\n";
+                return;
+            }
+        }
+
+        if(match(TokenType::TOK_COMMA)) consume(TokenType::TOK_COMMA);
     }
 
     if(match(TokenType::TOK_SEMICOLON)) {
@@ -774,7 +786,9 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         auto rows = table->selectAll();
 
         for(int i = 0; i < rows.size(); i++) {
-            table->updateCell(i, updateColIndex, newValue);
+            for(int j = 0; j < updateColumnIndexes.size(); j++) {
+                table->updateCell(i, updateColumnIndexes[j], newValues[j]);
+            }
         }
     }
     else if(match(TokenType::TOK_WHERE)) {
@@ -799,6 +813,51 @@ void Parser::parseUpdate(DatabaseManager& manager) {
             exit(1);
         }
 
+        if(match(TokenType::TOK_LIKE)) {
+            if(!(table->getColumnType(colNumber) == DataType::STRING)) {
+                std::cerr << "To use \"LIKE\" the column must be of type string\n";
+                return;
+            } 
+
+            consume(TokenType::TOK_LIKE);
+
+            bool isString = match(TokenType::TOK_STRING);
+
+            if(!isString) {
+                std::cerr << "To update using like the given value should be string\n";
+                return;
+            }
+
+            std::string wordLike = current.getLexeme();
+            consume(TokenType::TOK_STRING);
+
+            if(!(wordLike[1] == '%')) {
+                std::cerr << "Invalid syntax\n";
+                return;
+            }
+
+            char findWordWith = wordLike[0];
+            std::vector<Row> rows = table->selectAll();
+            bool found = false;
+
+            for(int i = 0; i < rows.size(); i++) {
+                Cell val = rows[i].getCell(colNumber);
+                char firstLetter = val.getString()[0];
+
+                if(findWordWith == firstLetter) {
+                    found = true;
+
+                    for(int j = 0; j < updateColumnIndexes.size(); j++) {
+                        table->updateCell(i, updateColumnIndexes[j], newValues[j]);
+                    }
+                }
+            }
+
+            consume(TokenType::TOK_SEMICOLON);
+
+            return;
+        }
+
         bool matched = ( match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
 
         if(matched) {
@@ -810,26 +869,80 @@ void Parser::parseUpdate(DatabaseManager& manager) {
 
             auto rows = table->selectAll();
 
-            for(int i = 0; i < rows.size(); i++) {
+            if(match(TokenType::TOK_LIMIT)) {
+                consume(TokenType::TOK_LIMIT);
 
-                Cell val = rows[i].getCell(colNumber);
-
-                bool condition = false;
-
-                switch(op) {
-
-                    case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
-                    case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
-                    case TokenType::TOK_GREATER : condition = (val > compVal); break;
-                    case TokenType::TOK_LESS : condition = (val < compVal); break;
-                    case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
-                    case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
-                    default : break;
+                Cell climit = parseValue();
+                
+                if(!climit.isInt()) {
+                    std::cerr << "Limit value must be INT\n";
+                    return;
                 }
 
-                if(condition) {
-                    table->updateCell(i, updateColIndex, newValue);
+                int limit = climit.getInt();
+
+                if(limit < 0) {
+                    std::cerr << "Limit cannot be negative\n";
+                    return;
                 }
+
+                int deleted = 0;
+
+                for(int i = 0; i < rows.size(); i++) {
+
+                    Cell val = rows[i].getCell(colNumber);
+
+                    bool condition = false;
+
+                    switch(op) {
+                        case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
+                        case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
+                        case TokenType::TOK_GREATER : condition = (val > compVal); break;
+                        case TokenType::TOK_LESS : condition = (val < compVal); break;
+                        case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
+                        case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
+                        default : break;
+                    }
+
+                    if(condition) {
+                        for(int j = 0; j < updateColumnIndexes.size(); j++) {
+                            table->updateCell(i, updateColumnIndexes[j], newValues[j]);
+
+                            deleted++;
+
+                            if(deleted == limit) {
+                                consume(TokenType::TOK_SEMICOLON);
+                                return; 
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+
+                for(int i = 0; i < rows.size(); i++) {
+
+                    Cell val = rows[i].getCell(colNumber);
+
+                    bool condition = false;
+
+                    switch(op) {
+
+                        case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
+                        case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
+                        case TokenType::TOK_GREATER : condition = (val > compVal); break;
+                        case TokenType::TOK_LESS : condition = (val < compVal); break;
+                        case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
+                        case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
+                        default : break;
+                    }
+
+                    if(condition) {
+                        for(int j = 0; j < updateColumnIndexes.size(); j++) {
+                            table->updateCell(i, updateColumnIndexes[j], newValues[j]);
+                        }
+                    }
+                } 
             }
         }
 

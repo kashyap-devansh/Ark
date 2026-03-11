@@ -7,4 +7,6 @@ INSERT INTO users VALUES (1, "Alice", 25);
 INSERT INTO users VALUES (2, "Bob", 30);
 INSERT INTO users VALUES (3, "Charlie", 35);
 
-SELECT * FROM users WHERE name LIKE "B%";
+UPDATE users SET age = 18 WHERE id >= 1 LIMIT 3;
+
+SELECT * FROM users;
