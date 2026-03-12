@@ -127,6 +127,8 @@ public :
 
     void updateCell(int rowIndex, int columnIndex, const Cell& newValue);
 
+    Row* getRow(int rowIndex);
+
     void deleteRow(int rowIndex);
 
     std::vector<Row> selectAll() const;

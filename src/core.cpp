@@ -247,6 +247,12 @@ void Table::insertRow(const Row& row) {
     rows.push_back(row);
 }
 
+Row* Table::getRow(int rowIndex) {
+    if(rowIndex >= 0 && rowIndex < rows.size()) return &rows.at(rowIndex);
+
+    return nullptr;
+}
+
 void Table::deleteRow(int rowIndex) {
     if(rowIndex < 0 || rowIndex >= static_cast<int>(rows.size())) {
         std::cout << "Invalid row Index\n";

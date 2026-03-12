@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "helper.h"
 
 #include <iostream>
 
@@ -876,6 +877,11 @@ void Parser::parseDelete(DatabaseManager& manager) {
 
             Cell compVal = parseValue();
 
+            if(match(TokenType::TOK_AND) || match(TokenType::TOK_OR)) {
+                parseDeleteLogical(manager, table, colNumber, columnName, op, compVal);
+                return;
+            }
+
             std::vector<Row> rows = table->selectAll();
 
             if(match(TokenType::TOK_LIMIT)) {
@@ -967,4 +973,96 @@ void Parser::parseDelete(DatabaseManager& manager) {
         
         consume(TokenType::TOK_SEMICOLON);
     }
+}
+
+void Parser::parseDeleteLogical(DatabaseManager& manager, Table* table, int colNumber, std::string colName, TokenType firstOp, Cell firstVal) {
+
+    std::vector<int> selectedColIndexes;
+    std::vector<TokenType> operators;
+    std::vector<Cell> values;
+    std::vector<TokenType> logicalOps;
+
+    selectedColIndexes.push_back(colNumber);
+    operators.push_back(firstOp);
+    values.push_back(firstVal);
+
+    bool colFound = false;
+
+    while(true) {
+
+        if(match(TokenType::TOK_AND)) {
+            logicalOps.push_back(TokenType::TOK_AND);
+            consume(TokenType::TOK_AND);
+        }
+        else if(match(TokenType::TOK_OR)) {
+            logicalOps.push_back(TokenType::TOK_OR);
+            consume(TokenType::TOK_OR);
+        }
+        else {
+            break;
+        }
+
+        if(!match(TokenType::TOK_IDENTIFIER)) {
+            std::cerr << "Expected column name but got: " << current.getLexeme() << std::endl;
+            return;
+        }
+
+        std::string colNameToken = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        colFound = false;
+
+        for(int i = 0; i < table->getColumnCount(); i++) {
+            if(table->getColumName(i) == colNameToken) {
+                selectedColIndexes.push_back(i);
+                colFound = true;
+                break;
+            }
+        }
+
+        if(!colFound) {
+            std::cerr << "No column found with name : " << colNameToken << std::endl;
+            return;
+        }
+
+        bool matched = (match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
+
+        TokenType op = current.getType();
+
+        if(!matched) {
+            std::cerr << "No suitable operator found.\n";
+            return;
+        }
+
+        operators.push_back(op);
+
+        consume(op);
+
+        Cell compVal = parseValue();
+        values.push_back(compVal);
+    }
+
+    for(int r = table->getRowCount() - 1; r >= 0; r--) {
+
+        const Row* row = table->getRow(r);
+
+        bool condition = evaluateCondition(row->getCell(selectedColIndexes[0]), operators[0], values[0]);
+
+        for(int i = 1; i < selectedColIndexes.size(); i++) {
+
+            bool nextCond = evaluateCondition(row->getCell(selectedColIndexes[i]), operators[i], values[i]);
+
+            switch(logicalOps[i - 1]) {
+                case TokenType::TOK_AND : condition = condition && nextCond; break;
+                case TokenType::TOK_OR  : condition = condition || nextCond; break;
+                default : std::cerr << "Invalid logical operator\n"; return;
+            }
+        }
+
+        if(condition) {
+            table->deleteRow(r);
+        }
+    }
+
+    consume(TokenType::TOK_SEMICOLON);
 }

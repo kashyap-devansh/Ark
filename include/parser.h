@@ -28,6 +28,8 @@ private :
     void parseShowDatabases(DatabaseManager& manager);
     void parseShowColumns(DatabaseManager& manager);
 
+    void parseDeleteLogical(DatabaseManager& manager, Table* table, int colNumber, std::string colName, TokenType firstOp, Cell firstVal);
+
     DataType parseDataType();
     Cell parseValue();
     int getColumnIndex(Table* table, const std::string& columnName);
