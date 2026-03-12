@@ -14,17 +14,18 @@ It provides relational database capabilities, allowing users to parse and execut
 - **Table Operations**: Define and drop tables (`CREATE TABLE`, `DROP TABLE`).
 - **Data Types**: Full support for `INT`, `DOUBLE`, `STRING`, and `BOOL` data types.
 - **Advanced Data Manipulation (DML)**: 
-  - Insert single or multiple records at once (`INSERT INTO`).
+  - Insert single or multiple records at once, and optionally specify target columns (`INSERT INTO`).
   - Retrieve data with column selection (`SELECT`).
   - Update specific records (`UPDATE`).
   - Delete records (`DELETE`).
   - **Query Filtering**: Powerful conditional filtering using `WHERE` with multiple operators (`==`, `!=`, `<`, `>`, `<=`, `>=`).
+  - **Compound Conditions**: Chain multiple conditions together using `AND` and `OR`.
   - **Pattern Matching**: String matching using `LIKE '<c>%'`.
   - **Limiting Results**: Restrict modifications or deletions using `LIMIT <n>`.
 - **Navigation & Inspection**: Introspect databases, tables, and column structures (`SHOW DATABASES`, `SHOW TABLES`, `SHOW COLUMNS`).
 - **Persistence**: Save and load databases entirely to and from disk (`SAVE`, `LOAD`).
 
-*Note: Graph systems and compound conditions (AND/OR) are currently planned for future updates.*
+*Note: Graph systems are currently planned for future updates.*
 
 ## 🗂️ Supported SQL Syntax
 
@@ -46,17 +47,19 @@ SHOW COLUMNS FROM <table>;
 -- Insert Data
 INSERT INTO <table> VALUES (<val>, ...);
 INSERT INTO <table> VALUES (<val>, ...), (<val>, ...);
+INSERT INTO <table> (<col>, ...) VALUES (<val>, ...);
 
 -- Query Data
 SELECT * FROM <table>;
 SELECT <col1>, <col2> FROM <table> WHERE <col> == <val>;
+SELECT * FROM <table> WHERE <col> == <val> AND <col2> != <val2>;
 SELECT * FROM <table> WHERE <col> LIKE '<c>%';
 
 -- Update Data
 UPDATE <table> SET <col> = <val> WHERE <col> == <val> LIMIT <n>;
 
 -- Delete Data
-DELETE FROM <table> WHERE <col> > <val>;
+DELETE FROM <table> WHERE <col> > <val> OR <col2> <= <val2>;
 
 -- Persistence
 SAVE;
@@ -99,10 +102,9 @@ INSERT INTO users VALUES (1, "Alice", 25);
 INSERT INTO users VALUES (2, "Bob", 30);
 INSERT INTO users VALUES (3, "Charlie", 35);
 
-UPDATE users SET age = 18 WHERE id >= 1 LIMIT 3;
+DELETE FROM users WHERE age >= 30 AND id == 2;
 
 SELECT * FROM users;
-SAVE;
 ```
 
 ## 🛠️ Getting Started
