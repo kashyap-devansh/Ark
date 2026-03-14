@@ -91,14 +91,6 @@ Cell Parser::parseValue() {
     exit(1);
 }
 
-int Parser::getColumnIndex(Table* table, const std::string& columnName) {
-    for(int i = 0; i < table->getColumnCount(); i++) {
-        if(table->getColumName(i) == columnName) return i;
-    }
-
-    return -1;
-}
-
 void Parser::parse(DatabaseManager& manager) {
     switch(current.getType()) {
         case TokenType::TOK_CREATE : parseCreate(manager); break;
@@ -326,11 +318,7 @@ void Parser::parseInsert(DatabaseManager& manager) {
     consume(TokenType::TOK_IDENTIFIER);
 
     Table* table = db->getTable(tableName);
-
-    if(!table) {
-        std::cerr << "No table found with name : " << tableName << "\n";
-        exit(1);
-    }
+    checkNotNull(table, tableName);
 
     consume(TokenType::TOK_VALUES);
 
@@ -385,12 +373,9 @@ void Parser::parseSelect(DatabaseManager& manager) {
     consume(TokenType::TOK_IDENTIFIER);
 
     Table* table = db->getTable(tableName);
-    if(!table) {
-        std::cerr << "Table not found: " << tableName << "\n";
-        return;
-    }
+    checkNotNull(table, tableName);
 
-    int printWhere = 0;
+    bool printWhere = false;
     std::vector<int> whereColumns;
 
     if(match(TokenType::TOK_WHERE)) {
@@ -399,20 +384,11 @@ void Parser::parseSelect(DatabaseManager& manager) {
         std::string colName = current.getLexeme();
         consume(TokenType::TOK_IDENTIFIER);
 
-        int colNumber;
-        bool colFound = false;
+        int colNumber = getColumnIndex(table, colName);
 
-        for(int i = 0; i < table->getColumnCount(); i++) {
-            if(table->getColumName(i) == colName) {
-                colNumber = i;
-                colFound = true;
-                break;
-            }
-        }
-
-        if(!colFound) {
+        if(colNumber == -1) {
             std::cerr << "no column found with name : " << colName << std::endl;
-            exit(1);
+            return;
         }
 
         if(match(TokenType::TOK_LIKE)) {
@@ -448,7 +424,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
                 if(findWordWith == firstLetter) {
                     found = true;
-                    printWhere = 1;
+                    printWhere = true;
 
                     whereColumns.push_back(i);
                 }
@@ -463,28 +439,8 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
             Cell compVal = parseValue();
 
-            auto rows = table->selectAll();
-
-            for(int i = 0; i <table->getRowCount(); i++) {
-                Cell val = rows[i].getCell(colNumber);
-
-                bool condition = false;
-
-                switch(op) {
-                    case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
-                    case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
-                    case TokenType::TOK_GREATER : condition = (val > compVal); break;
-                    case TokenType::TOK_LESS : condition = (val < compVal); break;
-                    case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
-                    case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
-                    default : break;
-                }
-
-                if(condition) {
-                    printWhere = 1;
-                    whereColumns.push_back(i);
-                }
-            }
+            whereColumns = getMatchingRows(table, colNumber, op, compVal);
+            if(!whereColumns.empty()) printWhere = true;
         }
     }
 
@@ -497,20 +453,15 @@ void Parser::parseSelect(DatabaseManager& manager) {
     }
     else {
         for(const std::string& colName : selectedColumns) {
-            bool found = false;
 
-            for(int i = 0; i < table->getColumnCount(); i++) {
-                if(table->getColumName(i) == colName) {
-                    columnIndexes.push_back(i);
-                    found = true;
-                    break;
-                }
-            }
+            int colIndex = getColumnIndex(table, colName);
 
-            if(!found) {
+            if(colIndex == -1) {
                 std::cerr << "Column not found: " << colName << "\n";
                 return;
             }
+
+            columnIndexes.push_back(colIndex);
         } 
     }
 
@@ -583,11 +534,7 @@ void Parser::parseUpdate(DatabaseManager& manager) {
     consume(TokenType::TOK_IDENTIFIER);
 
     Table* table = db->getTable(tableName);
-
-    if(!table) {
-        std::cerr << "No table found with name : " << tableName << "\n";
-        exit(1);
-    }
+    checkNotNull(table, tableName);
 
     consume(TokenType::TOK_SET);
 
@@ -598,6 +545,12 @@ void Parser::parseUpdate(DatabaseManager& manager) {
 
     while(!(match(TokenType::TOK_WHERE) || match(TokenType::TOK_SEMICOLON))) {
         columnNames.push_back(current.getLexeme());
+        int colIndex = getColumnIndex(table, columnNames[columnCounter]);
+
+        if(colIndex == -1) {
+            std::cerr << "No column found with name: " << columnNames[columnCounter] << "\n";
+            return;
+        }
         updateColumnIndexes.push_back(getColumnIndex(table, columnNames[columnCounter]));
         columnCounter++;
 
@@ -605,13 +558,6 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         consume(TokenType::TOK_EQUAL);
 
         newValues.push_back(parseValue());
-
-        for(int i = 0; i < updateColumnIndexes.size(); i++) {
-            if(updateColumnIndexes[i] == -1) {
-                std::cerr << "No column found with name: " << columnNames[i] << "\n";
-                return;
-            }
-        }
 
         if(match(TokenType::TOK_COMMA)) consume(TokenType::TOK_COMMA);
     }
@@ -633,18 +579,9 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         std::string colName = current.getLexeme();
         consume(TokenType::TOK_IDENTIFIER);
 
-        int colNumber;
-        bool colFound = false;
+        int colNumber = getColumnIndex(table, colName);
 
-        for(int i = 0; i < table->getColumnCount(); i++) {
-            if(table->getColumName(i) == colName) {
-                colNumber = i;
-                colFound = true;
-                break;
-            }
-        }
-
-        if(!colFound) {
+        if(colNumber == -1) {
             std::cerr << "no column found with name : " << colName << std::endl;
             exit(1);
         }
@@ -728,19 +665,7 @@ void Parser::parseUpdate(DatabaseManager& manager) {
 
                     Cell val = rows[i].getCell(colNumber);
 
-                    bool condition = false;
-
-                    switch(op) {
-                        case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
-                        case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
-                        case TokenType::TOK_GREATER : condition = (val > compVal); break;
-                        case TokenType::TOK_LESS : condition = (val < compVal); break;
-                        case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
-                        case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
-                        default : break;
-                    }
-
-                    if(condition) {
+                    if(evaluateCondition(val, op, compVal)) {
                         for(int j = 0; j < updateColumnIndexes.size(); j++) {
                             table->updateCell(i, updateColumnIndexes[j], newValues[j]);
 
@@ -760,20 +685,7 @@ void Parser::parseUpdate(DatabaseManager& manager) {
 
                     Cell val = rows[i].getCell(colNumber);
 
-                    bool condition = false;
-
-                    switch(op) {
-
-                        case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
-                        case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
-                        case TokenType::TOK_GREATER : condition = (val > compVal); break;
-                        case TokenType::TOK_LESS : condition = (val < compVal); break;
-                        case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
-                        case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
-                        default : break;
-                    }
-
-                    if(condition) {
+                    if(evaluateCondition(val, op, compVal)) {
                         for(int j = 0; j < updateColumnIndexes.size(); j++) {
                             table->updateCell(i, updateColumnIndexes[j], newValues[j]);
                         }
@@ -797,6 +709,7 @@ void Parser::parseDelete(DatabaseManager& manager) {
     consume(TokenType::TOK_IDENTIFIER);
 
     Table* table = db->getTable(tableName);
+    checkNotNull(table, tableName);
 
     if(match(TokenType::TOK_SEMICOLON)) {
         consume(TokenType::TOK_SEMICOLON);
@@ -809,18 +722,9 @@ void Parser::parseDelete(DatabaseManager& manager) {
         std::string columnName = current.getLexeme();
         consume(TokenType::TOK_IDENTIFIER);
 
-        int colNumber;
-        bool colFound = false;
+        int colNumber = getColumnIndex(table, columnName);
 
-        for(int i = 0; i < table->getColumnCount(); i++) {
-            if(table->getColumName(i) == columnName) {
-                colNumber = i;
-                colFound = true;
-                break;
-            }
-        }
-
-        if(!colFound) {
+        if(colNumber == -1) {
             std::cerr << "no column found with name : " << columnName << std::endl;
             exit(1);
         }
@@ -907,19 +811,7 @@ void Parser::parseDelete(DatabaseManager& manager) {
 
                     Cell val = rows[i].getCell(colNumber);
 
-                    bool condition = false;
-
-                    switch(op) {
-                        case TokenType::TOK_EQUAL_EQUAL: condition = (val == compVal); break;
-                        case TokenType::TOK_NOT_EQUAL: condition = (val != compVal); break;
-                        case TokenType::TOK_GREATER: condition = (val > compVal); break;
-                        case TokenType::TOK_LESS: condition = (val < compVal); break;
-                        case TokenType::TOK_GREATER_EQUAL: condition = (val >= compVal); break;
-                        case TokenType::TOK_LESS_EQUAL: condition = (val <= compVal); break;
-                        default: break;
-                    }
-
-                    if(condition) {
+                    if(evaluateCondition(val, op, compVal)) {
                         table->deleteRow(i);
                         deleted++;
 
@@ -931,19 +823,7 @@ void Parser::parseDelete(DatabaseManager& manager) {
                 for(int i = rows.size() - 1; i >= 0; i--) {
                     Cell val = rows[i].getCell(colNumber);
 
-                    bool condition = false;
-
-                    switch(op) {
-                        case TokenType::TOK_EQUAL_EQUAL : condition = (val == compVal); break;
-                        case TokenType::TOK_NOT_EQUAL : condition = (val != compVal); break;
-                        case TokenType::TOK_GREATER : condition = (val > compVal); break;
-                        case TokenType::TOK_LESS : condition = (val < compVal); break;
-                        case TokenType::TOK_GREATER_EQUAL : condition = (val >= compVal); break;
-                        case TokenType::TOK_LESS_EQUAL : condition = (val <= compVal); break;
-                        default : break;
-                    }
-
-                    if(condition) table->deleteRow(i);
+                    if(evaluateCondition(val, op, compVal)) table->deleteRow(i);
                 } 
             }
         }
@@ -1010,29 +890,22 @@ void Parser::parseDeleteLogical(DatabaseManager& manager, Table* table, int colN
         std::string colNameToken = current.getLexeme();
         consume(TokenType::TOK_IDENTIFIER);
 
-        colFound = false;
+        int colIndex = getColumnIndex(table, colNameToken);
+        selectedColIndexes.push_back(colIndex);
 
-        for(int i = 0; i < table->getColumnCount(); i++) {
-            if(table->getColumName(i) == colNameToken) {
-                selectedColIndexes.push_back(i);
-                colFound = true;
-                break;
-            }
-        }
-
-        if(!colFound) {
+        if(colIndex == -1) {
             std::cerr << "No column found with name : " << colNameToken << std::endl;
             return;
         }
 
         bool matched = (match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
 
-        TokenType op = current.getType();
-
         if(!matched) {
             std::cerr << "No suitable operator found.\n";
             return;
         }
+        
+        TokenType op = current.getType();
 
         operators.push_back(op);
 

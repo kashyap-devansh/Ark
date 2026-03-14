@@ -32,7 +32,6 @@ private :
 
     DataType parseDataType();
     Cell parseValue();
-    int getColumnIndex(Table* table, const std::string& columnName);
 
 public :
     Parser(const std::string& input, int startLine);
