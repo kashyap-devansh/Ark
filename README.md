@@ -14,7 +14,16 @@
 
 ## 📖 Overview
 
-**Ark** is an advanced, standalone database engine simulation and interpreter. Built entirely from scratch, it eschews external database libraries in favor of its own custom-built lexical tokenizer, expression parser, and core execution engine. 
+**Ark** is an advanced, standalone database engine simulation and interpreter. 
+
+### 🛠️ Built 100% From Scratch in C++
+Unlike many projects that wrap existing engines or use parser generators, **Ark is built entirely from the ground up in C++**. It strictly eschews external database libraries (like SQLite) and parser generators (like Bison/Flex). 
+
+Every single component of the pipeline is a custom, hand-written C++ implementation:
+- **Zero External Dependencies:** No third-party database APIs or parsing libraries are used.
+- **Custom Lexical Tokenizer & Parser:** Hand-rolled lexical analysis and Abstract Syntax Tree (AST) generation.
+- **Native Execution Engine:** Custom in-memory table structures, data types, and row filtering algorithms.
+- **Raw Disk Persistence:** Custom serialization for saving and loading databases directly to disk.
 
 Ark provides robust relational database capabilities, allowing users to parse, validate, and execute a comprehensive subset of standard SQL-like statements. It handles its own custom data structure storage and memory management to simulate a complete functioning database environment.
 
