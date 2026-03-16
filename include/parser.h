@@ -33,6 +33,12 @@ private :
     DataType parseDataType();
     Cell parseValue();
 
+    int parseLimitValue();
+
+    std::vector<int> parseLikeMatches(Table* table, int colIndex);
+
+    std::vector<int> parseWhereClause(Table* table);
+
 public :
     Parser(const std::string& input, int startLine);
     void parse(DatabaseManager& manager);

@@ -12,6 +12,134 @@ void printBorder(const std::vector<int>& widths, const std::vector<int>& columnI
     std::cout << "+\n";
 }
 
+int Parser::parseLimitValue() {
+    consume(TokenType::TOK_LIMIT);
+    Cell cLimit = parseValue();
+
+    if(!cLimit.isInt()) {
+        std::cerr << "Limit value must be INT\n";
+        exit(1);
+    }
+
+    int limit = cLimit.getInt();
+
+    if(limit < 0) {
+        std::cerr << "LIMIT cannot be negative\n";
+        exit(1);
+    }
+
+    return limit;
+}
+
+std::vector<int> Parser::parseLikeMatches(Table* table, int colIndex) {
+    if(!(table->getColumnType(colIndex) == DataType::STRING)) {
+        std::cerr << "To use \"LIKE\" the column must be of type string\n";
+        exit(EXIT_FAILURE);
+    }
+
+    consume(TokenType::TOK_LIKE);
+
+    bool isString = match(TokenType::TOK_STRING);
+
+    if(!isString) {
+        std::cerr << "To delete like the given value should be string\n";
+        exit(EXIT_FAILURE);
+    }
+
+    std::string wordLike = current.getLexeme();
+    consume(TokenType::TOK_STRING);
+
+    if(!(wordLike[1] == '%')) {
+        std::cerr << "Invalid syntax\n";
+        exit(EXIT_FAILURE);
+    }
+
+    char findWordWith = wordLike[0];
+    std::vector<Row> rows = table->selectAll();
+
+    std::vector<int> result;
+    for(int i = 0; i < rows.size(); i++) {
+        Cell val = rows[i].getCell(colIndex);
+        char firstLetter = val.getString()[0];
+
+        if(findWordWith == firstLetter) {
+            result.push_back(i);
+        }
+    }
+
+    return result;
+}
+
+std::vector<int> Parser::parseWhereClause(Table* table) {
+    consume(TokenType::TOK_WHERE);
+
+    std::string columnName = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+
+    int colNumber = getColumnIndex(table, columnName);
+
+    if(colNumber == -1) {
+        std::cerr << "No column found with name : " << columnName << "\n";
+        exit(EXIT_FAILURE);
+    }
+
+    if(match(TokenType::TOK_LIKE)) {
+        return parseLikeMatches(table, colNumber);
+    }
+
+    bool matched = (match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
+
+    if(matched) {
+        TokenType op = current.getType();
+        consume(op);
+
+        Cell compVal = parseValue();
+
+        if(!match(TokenType::TOK_AND) && !match(TokenType::TOK_OR)) {
+            return getMatchingRows(table, colNumber, op, compVal);
+        }
+
+        std::vector<Condition> conditions;
+        std::vector<TokenType> logicalOps;
+
+        conditions.push_back({colNumber, op, compVal});
+
+        while(match(TokenType::TOK_AND) || match(TokenType::TOK_OR)) {
+            TokenType logicOp = current.getType();
+            consume(logicOp);
+            logicalOps.push_back(logicOp);
+
+            std::string nextCol = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            int nextColIndex = getColumnIndex(table, nextCol);
+            if(nextColIndex == -1) {
+                std::cerr << "No column found with name : " << nextCol << "\n";
+                exit(EXIT_FAILURE);
+            }
+
+            TokenType nextOp = current.getType();
+            consume(nextOp);
+
+            Cell nextVal = parseValue();
+            conditions.push_back({nextColIndex, nextOp, nextVal});
+        }
+
+        std::vector<int> result;
+        std::vector<Row> rows = table->selectAll();
+
+        for(int i = 0; i < rows.size(); i++) {
+            if(evaluateLogicalConditions(&rows[i], conditions, logicalOps)) {
+                result.push_back(i);
+            }
+        }
+
+        return result;
+    }
+
+    return {};
+}
+
 Parser::Parser(const std::string& input, int startLine) : tokenizer(input, startLine) {
     current = tokenizer.nextToken();
 }
@@ -375,75 +503,11 @@ void Parser::parseSelect(DatabaseManager& manager) {
     Table* table = db->getTable(tableName);
     checkNotNull(table, tableName);
 
-    bool printWhere = false;
-    std::vector<int> whereColumns;
-
+    std::vector<int> whereRows;
     if(match(TokenType::TOK_WHERE)) {
-        consume(TokenType::TOK_WHERE);
-
-        std::string colName = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
-
-        int colNumber = getColumnIndex(table, colName);
-
-        if(colNumber == -1) {
-            std::cerr << "no column found with name : " << colName << std::endl;
-            return;
-        }
-
-        if(match(TokenType::TOK_LIKE)) {
-            consume(TokenType::TOK_LIKE);
-
-            if(!(table->getColumnType(colNumber) == DataType::STRING)) {
-                std::cerr << "To use \"LIKE\" the column must be of type string\n";
-                exit(1);
-            }
-
-            bool isString = match(TokenType::TOK_STRING);
-
-            if(!isString) {
-                std::cerr << "To select like the given values should be string \n";
-                exit(1);
-            }
-
-            std::string wordLike = current.getLexeme();
-            consume(TokenType::TOK_STRING);
-
-            if(!(wordLike[1] == '%')) {
-                std::cerr << "Invalid syntax\n";
-                exit(1);
-            }
-
-            char findWordWith = wordLike[0];
-            std::vector<Row> rows = table->selectAll();
-            bool found = false;
-
-            for(int i = 0; i < table->getRowCount(); i++) {
-                Cell val = rows[i].getCell(colNumber);
-                char firstLetter = val.getString()[0];
-
-                if(findWordWith == firstLetter) {
-                    found = true;
-                    printWhere = true;
-
-                    whereColumns.push_back(i);
-                }
-            }
-        }
-
-        bool matched = (match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
-
-        if(matched) {
-            TokenType op = current.getType();
-            consume(op);
-
-            Cell compVal = parseValue();
-
-            whereColumns = getMatchingRows(table, colNumber, op, compVal);
-            if(!whereColumns.empty()) printWhere = true;
-        }
+        whereRows = parseWhereClause(table);
     }
-
+    
     consume(TokenType::TOK_SEMICOLON);
 
     std::vector<int> columnIndexes;
@@ -495,14 +559,16 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
     for(int r = 0; r < table->getRowCount(); r++) {
 
-        if(printWhere) {
+        if(!whereRows.empty()) {
             bool allowed = false;
-            for(int idx : whereColumns) {
+
+            for(int idx : whereRows) {
                 if(idx == r) {
                     allowed = true;
                     break;
                 }
             }
+
             if(!allowed) continue;
         }
 

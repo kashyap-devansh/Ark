@@ -9,4 +9,4 @@ INSERT INTO users VALUES (3, "Charlie", 35);
 
 DELETE FROM users WHERE age >= 30 AND id == 2;
 
-SELECT * FROM users;
+SELECT * FROM users WHERE id == 1;
