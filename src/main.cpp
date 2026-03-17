@@ -26,6 +26,13 @@ int main(int argc, char* argv[]) {
     while(file.get(ch)) {
         if(ch == '\n') currentLine++;
 
+        if(ch == '-' && file.peek() == '-') {
+            while(file.get(ch) && ch != '\n');
+            
+            currentLine++;
+            continue;
+        }
+
         command += ch;
 
         if(ch == ';') {
