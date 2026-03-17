@@ -1,6 +1,15 @@
 #include "helper.h"
 #include <iostream>
 
+void printBorder(const std::vector<int>& widths, const std::vector<int>& columnIndexes) {
+    for(int i = 0; i < columnIndexes.size(); i++) {
+        std::cout << "+-";
+        for(int j = 0; j < widths[i]; j++) std::cout << "-";
+        std::cout << "-";
+    }
+    std::cout << "+\n";
+}
+
 bool evaluateCondition(const Cell& left, TokenType op, const Cell& right) {
     switch(op) {
         case TokenType::TOK_EQUAL_EQUAL : return left == right; 
@@ -52,4 +61,69 @@ bool evaluateLogicalConditions(const Row* row, const std::vector<Condition>& con
     }
 
     return result;
+}
+
+std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndexes) {
+    std::vector<int> widths;
+    for(int i = 0; i < colIndexes.size(); i++) widths.push_back(table->getColumName(colIndexes.at(i)).length());
+
+    for(const Row& row : table->selectAll()) {
+        for(int i = 0; i < colIndexes.size(); i++) {
+            int cellWidth = row.getCell(colIndexes[i]).toString().length();
+
+            widths[i] = std::max(cellWidth, widths[i]);
+        }
+    }
+
+    return widths;
+}
+
+void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes) {
+    std::vector<int> widths = computeColWidths(table, colIndexes);
+
+    printBorder(widths, colIndexes);
+
+    std::cout << "|";
+    for(int i = 0; i < colIndexes.size(); i++) {
+        std::string colName = table->getColumName(colIndexes[i]);
+        std::cout << " " << colName;
+
+        for(int j = colName.length(); j < widths[i]; j++) std::cout << " ";
+        std::cout << " |";
+    }
+
+    std::cout << "\n";
+
+    printBorder(widths, colIndexes);
+
+    for(int r = 0; r < table->getRowCount(); r++) {
+        if(!rowIndexes.empty()) {
+            bool allowed = false;
+
+            for(int idx : rowIndexes) {
+                if(idx == r) {
+                    allowed = true;
+                    break;
+                }
+            }
+
+            if(!allowed) continue;
+
+        }
+
+        const Row row = table->selectAll()[r];
+        std::cout << "|";
+
+        for(int i = 0; i < colIndexes.size(); i++) {
+            std::string val = row.getCell(colIndexes[i]).toString();
+            std::cout << " " << val;
+
+            for(int j = val.length(); j < widths[i]; j++) std::cout << " ";
+            std::cout << " |";
+        }
+
+        std::cout << "\n";
+    } 
+
+    printBorder(widths, colIndexes);
 }

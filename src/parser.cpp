@@ -3,15 +3,6 @@
 
 #include <iostream>
 
-void printBorder(const std::vector<int>& widths, const std::vector<int>& columnIndexes) {
-    for(int i = 0; i < columnIndexes.size(); i++) {
-        std::cout << "+-";
-        for(int j = 0; j < widths[i]; j++) std::cout << "-";
-        std::cout << "-";
-    }
-    std::cout << "+\n";
-}
-
 int Parser::parseLimitValue() {
     consume(TokenType::TOK_LIMIT);
     Cell cLimit = parseValue();
@@ -361,6 +352,11 @@ void Parser::parseShowDatabases(DatabaseManager& manager) {
 
     std::vector<std::string> dbs = manager.listDatabase();
 
+    if(dbs.empty()) {
+        std::cerr << "There is no database in the disk or memory.\n";
+        return;
+    }
+
     for(const auto& name : dbs) std::cout << name << "\n";
 }
 
@@ -384,25 +380,21 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     std::vector<int> columnIndexes;
     for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
 
-    std::vector<int> widths;
-    for(int i = 0; i < columnIndexes.size(); i++) {
-        widths.push_back(table->getColumName(columnIndexes[i]).length());
-    }
+    std::vector<int> widths = computeColWidths(table, columnIndexes);
 
     for(int i = 0; i < columnIndexes.size(); i++) {
         switch(table->getColumnType(columnIndexes[i])) {
-            case DataType::INT : if(3 > widths[i]) widths.at(i) = 3; break;
-            case DataType::DOUBLE : if(6 > widths[i]) widths.at(i) = 6; break;
-            case DataType::STRING : if(6 > widths[i]) widths.at(i) = 6; break;
-            case DataType::BOOL : if(4 > widths[i]) widths.at(i) = 4; break;
-            case DataType::NONE : if(4 > widths[i]) widths.at(i) = 4; break; 
+            case DataType::INT : widths[i] = std::max(widths[i], 3); break;
+            case DataType::DOUBLE : widths[i] = std::max(widths[i], 6); break;
+            case DataType::STRING : widths[i] = std::max(widths[i], 6); break;
+            case DataType::BOOL : widths[i] = std::max(widths[i], 4); break;
+            case DataType::NONE : widths[i] = std::max(widths[i], 4); break;
         }
     }
 
     printBorder(widths, columnIndexes);
 
     std::cout << "|";
-
     for(int i = 0; i < columnIndexes.size(); i++) {
         std::string colName = table->getColumName(columnIndexes[i]);
         std::cout << " " << colName;
@@ -410,6 +402,7 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
         for(int j = colName.length(); j < widths[i]; j++) std::cout << " ";
         std::cout << " |";
     }
+
     std::cout << "\n";
 
     printBorder(widths, columnIndexes);
@@ -417,19 +410,18 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     std::cout << "|";
     for(int i = 0; i < columnIndexes.size(); i++) {
         int typeLength = 0;
-
+        
         switch(table->getColumnType(columnIndexes[i])) {
-            case DataType::INT : std::cout << " " << "INT"; typeLength = 3; break;
-            case DataType::DOUBLE : std::cout << " " << "DOUBLE"; typeLength = 6; break;
-            case DataType::STRING : std::cout << " " << "STRING"; typeLength = 6; break;
-            case DataType::BOOL : std::cout << " " << "BOOL"; typeLength = 4; break;
-            case DataType::NONE : std::cout << " " << "NONE"; typeLength = 4; break;
+            case DataType::INT : std::cout << " INT";    typeLength = 3; break;
+            case DataType::DOUBLE : std::cout << " DOUBLE"; typeLength = 6; break;
+            case DataType::STRING : std::cout << " STRING"; typeLength = 6; break;
+            case DataType::BOOL : std::cout << " BOOL";   typeLength = 4; break;
+            case DataType::NONE : std::cout << " NONE";   typeLength = 4; break;
         }
 
         for(int j = typeLength; j < widths[i]; j++) std::cout << " ";
         std::cout << " |";
     }
-    
     std::cout << "\n";
 
     printBorder(widths, columnIndexes);
@@ -529,65 +521,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
         } 
     }
 
-    std::vector<int> widths;
-    for(int i = 0; i < columnIndexes.size(); i++) {
-        widths.push_back(table->getColumName(columnIndexes.at(i)).length());
-    }
-
-    for(const Row& row : table->selectAll()) {
-        for(int i = 0; i < columnIndexes.size(); i++) {
-            int cellWidth = row.getCell(columnIndexes[i]).toString().length();
-
-            if(cellWidth > widths[i]) widths[i] = cellWidth;
-        }
-    }
-
-    printBorder(widths, columnIndexes);
-
-    std::cout << "|";
-
-    for(int i = 0; i < columnIndexes.size(); i++) {
-        std::string colName = table->getColumName(columnIndexes[i]);
-        std::cout << " " << colName;
-
-        for(int j = colName.length(); j < widths[i]; j++) std::cout << " ";
-        std::cout << " |";
-    }
-    std::cout << "\n";
-
-    printBorder(widths, columnIndexes);
-
-    for(int r = 0; r < table->getRowCount(); r++) {
-
-        if(!whereRows.empty()) {
-            bool allowed = false;
-
-            for(int idx : whereRows) {
-                if(idx == r) {
-                    allowed = true;
-                    break;
-                }
-            }
-
-            if(!allowed) continue;
-        }
-
-        const Row row = table->selectAll()[r];
-
-        std::cout << "|";
-
-        for(int i = 0; i < columnIndexes.size(); i++) {
-            std::string val = row.getCell(columnIndexes[i]).toString();
-            std::cout << " " << val;
-
-            for(int j = val.length(); j < widths[i]; j++) std::cout << " ";
-            std::cout << " |";
-        }
-
-        std::cout << "\n";
-    }
-
-    printBorder(widths, columnIndexes);
+    printTableResult(table, columnIndexes, whereRows);
 }
 
 void Parser::parseUpdate(DatabaseManager& manager) {
@@ -640,124 +574,19 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         }
     }
     else if(match(TokenType::TOK_WHERE)) {
-        consume(TokenType::TOK_WHERE);
+        std::vector<int> whereRows = parseWhereClause(table);
 
-        std::string colName = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
-
-        int colNumber = getColumnIndex(table, colName);
-
-        if(colNumber == -1) {
-            std::cerr << "no column found with name : " << colName << std::endl;
-            exit(1);
+        int limit = -1;
+        if(match(TokenType::TOK_LIMIT)) {
+            limit = parseLimitValue();
         }
 
-        if(match(TokenType::TOK_LIKE)) {
-            if(!(table->getColumnType(colNumber) == DataType::STRING)) {
-                std::cerr << "To use \"LIKE\" the column must be of type string\n";
-                return;
-            } 
+        int updated = 0;
+        for(int i : whereRows) {
+            for(int j = 0; j < updateColumnIndexes.size(); j++) table->updateCell(i, updateColumnIndexes[j], newValues[j]);
 
-            consume(TokenType::TOK_LIKE);
-
-            bool isString = match(TokenType::TOK_STRING);
-
-            if(!isString) {
-                std::cerr << "To update using like the given value should be string\n";
-                return;
-            }
-
-            std::string wordLike = current.getLexeme();
-            consume(TokenType::TOK_STRING);
-
-            if(!(wordLike[1] == '%')) {
-                std::cerr << "Invalid syntax\n";
-                return;
-            }
-
-            char findWordWith = wordLike[0];
-            std::vector<Row> rows = table->selectAll();
-            bool found = false;
-
-            for(int i = 0; i < rows.size(); i++) {
-                Cell val = rows[i].getCell(colNumber);
-                char firstLetter = val.getString()[0];
-
-                if(findWordWith == firstLetter) {
-                    found = true;
-
-                    for(int j = 0; j < updateColumnIndexes.size(); j++) {
-                        table->updateCell(i, updateColumnIndexes[j], newValues[j]);
-                    }
-                }
-            }
-
-            consume(TokenType::TOK_SEMICOLON);
-
-            return;
-        }
-
-        bool matched = ( match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
-
-        if(matched) {
-
-            TokenType op = current.getType();
-            consume(op);
-
-            Cell compVal = parseValue();
-
-            auto rows = table->selectAll();
-
-            if(match(TokenType::TOK_LIMIT)) {
-                consume(TokenType::TOK_LIMIT);
-
-                Cell climit = parseValue();
-                
-                if(!climit.isInt()) {
-                    std::cerr << "Limit value must be INT\n";
-                    return;
-                }
-
-                int limit = climit.getInt();
-
-                if(limit < 0) {
-                    std::cerr << "Limit cannot be negative\n";
-                    return;
-                }
-
-                int deleted = 0;
-
-                for(int i = 0; i < rows.size(); i++) {
-
-                    Cell val = rows[i].getCell(colNumber);
-
-                    if(evaluateCondition(val, op, compVal)) {
-                        for(int j = 0; j < updateColumnIndexes.size(); j++) {
-                            table->updateCell(i, updateColumnIndexes[j], newValues[j]);
-
-                            deleted++;
-
-                            if(deleted == limit) {
-                                consume(TokenType::TOK_SEMICOLON);
-                                return; 
-                            }
-                        }
-                    }
-                }
-            }
-            else {
-
-                for(int i = 0; i < rows.size(); i++) {
-
-                    Cell val = rows[i].getCell(colNumber);
-
-                    if(evaluateCondition(val, op, compVal)) {
-                        for(int j = 0; j < updateColumnIndexes.size(); j++) {
-                            table->updateCell(i, updateColumnIndexes[j], newValues[j]);
-                        }
-                    }
-                } 
-            }
+            updated++;
+            if(limit != -1 && updated == limit) break;
         }
 
         consume(TokenType::TOK_SEMICOLON);
@@ -783,225 +612,19 @@ void Parser::parseDelete(DatabaseManager& manager) {
         while(!table->selectAll().empty()) table->deleteRow(0);
     }
     else if(match(TokenType::TOK_WHERE)) {
-        consume(TokenType::TOK_WHERE);
+        std::vector<int> whereRows = parseWhereClause(table);
 
-        std::string columnName = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
+        int limit = -1;
+        if(match(TokenType::TOK_LIMIT)) limit = parseLimitValue();
 
-        int colNumber = getColumnIndex(table, columnName);
-
-        if(colNumber == -1) {
-            std::cerr << "no column found with name : " << columnName << std::endl;
-            exit(1);
+        int deleted = 0;
+        for(int i = whereRows.size() - 1; i >= 0; i--) {
+            table->deleteRow(whereRows[i]);
+            
+            deleted++;
+            if(limit != -1 && deleted == limit) break;
         }
-
-        if(match(TokenType::TOK_LIKE)) {
-
-            if(!(table->getColumnType(colNumber) == DataType::STRING)) {
-                std::cerr << "To use \"LIKE\" the column must be of type string\n";
-                exit(1);
-            }
-
-            consume(TokenType::TOK_LIKE);
-
-            bool isString = match(TokenType::TOK_STRING);
-
-            if(!isString) {
-                std::cerr << "To delete like the given value should be string \n";
-                exit(1);
-            }
-
-            std::string wordLike = current.getLexeme();
-            consume(TokenType::TOK_STRING);
-
-            if(!(wordLike[1] == '%')) {
-                std::cerr << "Invalid syntax\n";
-                exit(1);
-            }
-
-            char findWordWith = wordLike[0];
-            std::vector<Row> rows = table->selectAll();
-            bool found = false;
-
-            for(int i = rows.size() - 1; i >= 0; i--) {
-                Cell val = rows[i].getCell(colNumber);
-                char firstLetter = val.getString()[0];
-
-                if(findWordWith == firstLetter) {
-                    found = true;
-
-                    table->deleteRow(i);
-                }
-            }
-
-            if(!found) {
-                std::cerr << "No Cell found with first letter : " << findWordWith << "\n";
-            }
-        }
-
-        bool matched = ( match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
-
-        if(matched) {
-            TokenType op = current.getType();
-            consume(op);
-
-            Cell compVal = parseValue();
-
-            if(match(TokenType::TOK_AND) || match(TokenType::TOK_OR)) {
-                parseDeleteLogical(manager, table, colNumber, columnName, op, compVal);
-                return;
-            }
-
-            std::vector<Row> rows = table->selectAll();
-
-            if(match(TokenType::TOK_LIMIT)) {
-                consume(TokenType::TOK_LIMIT);
-
-                Cell climit = parseValue();
-
-                if(!climit.isInt()) {
-                    std::cerr << "LIMIT value must be INT\n";
-                    exit(1);
-                }
-
-                int limit = climit.getInt();
-
-                if(limit < 0) {
-                    std::cerr << "LIMIT cannot be negative\n";
-                    exit(1);
-                }
-
-                int deleted = 0;
-
-                for(int i = rows.size() - 1; i >= 0; i--) {
-
-                    Cell val = rows[i].getCell(colNumber);
-
-                    if(evaluateCondition(val, op, compVal)) {
-                        table->deleteRow(i);
-                        deleted++;
-
-                        if(deleted == limit) break;
-                    }
-                }
-            }
-            else {
-                for(int i = rows.size() - 1; i >= 0; i--) {
-                    Cell val = rows[i].getCell(colNumber);
-
-                    if(evaluateCondition(val, op, compVal)) table->deleteRow(i);
-                } 
-            }
-        }
-
-        consume(TokenType::TOK_SEMICOLON);
-    }
-    else if(match(TokenType::TOK_LIMIT)) {
-        consume(TokenType::TOK_LIMIT);
-
-        Cell climit = parseValue();
-
-        if(!climit.isInt()) {
-            std::cerr << "LIMIT value must be INT\n";
-            exit(1);
-        }
-
-        int limit = climit.getInt();
-
-        if(limit < 0) {
-            std::cerr << "LIMIT cannot be negative\n";
-            exit(1);
-        }
-
-        limit = std::min(limit, table->getRowCount());
-
-        for(int i = 0; i < limit; i++) table->deleteRow(0);
         
         consume(TokenType::TOK_SEMICOLON);
     }
-}
-
-void Parser::parseDeleteLogical(DatabaseManager& manager, Table* table, int colNumber, std::string colName, TokenType firstOp, Cell firstVal) {
-
-    std::vector<int> selectedColIndexes;
-    std::vector<TokenType> operators;
-    std::vector<Cell> values;
-    std::vector<TokenType> logicalOps;
-
-    selectedColIndexes.push_back(colNumber);
-    operators.push_back(firstOp);
-    values.push_back(firstVal);
-
-    bool colFound = false;
-
-    while(true) {
-
-        if(match(TokenType::TOK_AND)) {
-            logicalOps.push_back(TokenType::TOK_AND);
-            consume(TokenType::TOK_AND);
-        }
-        else if(match(TokenType::TOK_OR)) {
-            logicalOps.push_back(TokenType::TOK_OR);
-            consume(TokenType::TOK_OR);
-        }
-        else {
-            break;
-        }
-
-        if(!match(TokenType::TOK_IDENTIFIER)) {
-            std::cerr << "Expected column name but got: " << current.getLexeme() << std::endl;
-            return;
-        }
-
-        std::string colNameToken = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
-
-        int colIndex = getColumnIndex(table, colNameToken);
-        selectedColIndexes.push_back(colIndex);
-
-        if(colIndex == -1) {
-            std::cerr << "No column found with name : " << colNameToken << std::endl;
-            return;
-        }
-
-        bool matched = (match(TokenType::TOK_EQUAL_EQUAL) || match(TokenType::TOK_NOT_EQUAL) || match(TokenType::TOK_GREATER_EQUAL) || match(TokenType::TOK_LESS_EQUAL) || match(TokenType::TOK_GREATER) || match(TokenType::TOK_LESS));
-
-        if(!matched) {
-            std::cerr << "No suitable operator found.\n";
-            return;
-        }
-        
-        TokenType op = current.getType();
-
-        operators.push_back(op);
-
-        consume(op);
-
-        Cell compVal = parseValue();
-        values.push_back(compVal);
-    }
-
-    for(int r = table->getRowCount() - 1; r >= 0; r--) {
-
-        const Row* row = table->getRow(r);
-
-        bool condition = evaluateCondition(row->getCell(selectedColIndexes[0]), operators[0], values[0]);
-
-        for(int i = 1; i < selectedColIndexes.size(); i++) {
-
-            bool nextCond = evaluateCondition(row->getCell(selectedColIndexes[i]), operators[i], values[i]);
-
-            switch(logicalOps[i - 1]) {
-                case TokenType::TOK_AND : condition = condition && nextCond; break;
-                case TokenType::TOK_OR  : condition = condition || nextCond; break;
-                default : std::cerr << "Invalid logical operator\n"; return;
-            }
-        }
-
-        if(condition) {
-            table->deleteRow(r);
-        }
-    }
-
-    consume(TokenType::TOK_SEMICOLON);
 }

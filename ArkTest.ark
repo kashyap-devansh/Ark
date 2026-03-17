@@ -1,12 +1,94 @@
 CREATE DATABASE testdb;
+SHOW DATABASES;
 USE testdb;
 
-CREATE TABLE users (id INT, name STRING, age INT);
+CREATE TABLE users (
+    id INT,
+    name STRING,
+    age INT,
+    score DOUBLE,
+    active BOOL
+);
 
-INSERT INTO users VALUES (1, "Alice", 25);
-INSERT INTO users VALUES (2, "Bob", 30);
-INSERT INTO users VALUES (3, "Charlie", 35);
+CREATE TABLE products (
+    id INT,
+    title STRING,
+    price DOUBLE,
+    instock BOOL,
+    quantity INT
+);
 
-DELETE FROM users WHERE age >= 30 AND id == 2;
+SHOW TABLES;
+SHOW COLUMNS FROM users;
+SHOW COLUMNS FROM products;
 
-SELECT * FROM users WHERE id == 1;
+INSERT INTO users VALUES
+    (1, "Alice", 30, 9.5, true),
+    (2, "Bob", 25, 7.2, false),
+    (3, "Charlie", 35, 8.8, true),
+    (4, "David", 28, 6.5, true),
+    (5, "Aaron", 22, 9.1, false);
+
+INSERT INTO products VALUES
+    (1, "Apple", 1.99, true, 100),
+    (2, "Banana", 0.99, true, 200),
+    (3, "Cherry", 3.49, false, 0),
+    (4, "Avocado", 2.49, true, 50),
+    (5, "Blueberry", 4.99, false, 0);
+
+SELECT * FROM users;
+SELECT * FROM products;
+
+SELECT name, age FROM users;
+SELECT title, price FROM products;
+
+SELECT * FROM users WHERE age > 25;
+SELECT * FROM users WHERE id == 3;
+SELECT * FROM users WHERE age != 30;
+
+SELECT * FROM users WHERE score >= 8.8;
+SELECT * FROM products WHERE price < 2.00;
+
+SELECT * FROM users WHERE active == true;
+SELECT * FROM products WHERE instock == false;
+
+SELECT * FROM users WHERE age > 22 AND active == true;
+SELECT * FROM products WHERE instock == true AND price < 2.50;
+
+SELECT * FROM users WHERE age < 25 OR score > 9.0;
+SELECT * FROM products WHERE instock == false OR quantity == 0;
+
+SELECT * FROM users WHERE name LIKE "A%";
+SELECT * FROM products WHERE title LIKE "B%";
+
+UPDATE users SET active = true;
+SELECT * FROM users;
+
+UPDATE users SET score = 10.0 WHERE name LIKE "A%";
+SELECT * FROM users;
+
+UPDATE users SET age = 99, active = false WHERE id == 2;
+SELECT * FROM users;
+
+UPDATE products SET instock = true WHERE instock == false LIMIT 1;
+SELECT * FROM products;
+
+DELETE FROM users WHERE age == 99;
+SELECT * FROM users;
+
+DELETE FROM products WHERE instock == false LIMIT 1;
+SELECT * FROM products;
+
+DELETE FROM users WHERE name LIKE "C%";
+SELECT * FROM users;
+
+SAVE;
+LOAD;
+SELECT * FROM users;
+SELECT * FROM products;
+
+SHOW TABLES;
+DROP TABLES;
+
+SHOW DATABASES;
+DROP DATABASES;

@@ -33,6 +33,10 @@ void DatabaseManager::dropDatabase(const std::string& name) {
 
     std::filesystem::remove_all(path);
 
+    for(int i = 0; i < dbNames.size(); i++) {
+        if(dbNames[i] == name) dbNames.erase(dbNames.begin() + i);
+    }
+
     if(hasActiveDatabase && currentDatabase.getName() == name) {
         hasActiveDatabase = false;
     }
