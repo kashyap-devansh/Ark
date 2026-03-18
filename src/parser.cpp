@@ -427,6 +427,45 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     printBorder(widths, columnIndexes);
 }
 
+// SELECT * FROM users ORDER BY score ASC;
+void Parser::parseOrderBy(Table* table, const std::vector<Row>& rows) {
+    consume(TokenType::TOK_BY);
+
+    std::string colName = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+
+    int colNumber = getColumnIndex(table, colName);
+
+    if (colNumber == -1) {
+        std::cerr << "No column found with name : " << colName << "\n";
+        exit(EXIT_FAILURE);
+    }
+
+    std::vector<int> sortedRows;
+    for (int i = 0; i < (int)rows.size(); i++) {
+        sortedRows.push_back(i);
+    }
+
+    for (int i = 0; i < (int)sortedRows.size() - 1; i++) {
+        bool swapped = false;
+
+        for (int j = 0; j < (int)sortedRows.size() - i - 1; j++) {
+            if (rows[sortedRows[j]].getCell(colNumber) > rows[sortedRows[j + 1]].getCell(colNumber)) {
+                std::swap(sortedRows[j], sortedRows[j + 1]);
+                swapped = true;
+            }
+        }
+        if (!swapped) break;
+    }
+
+    std::vector<int> columnIndexes;
+    for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
+
+    printTableResult(table, columnIndexes, sortedRows);
+
+    consume(TokenType::TOK_SEMICOLON);
+}
+
 void Parser::parseInsert(DatabaseManager& manager) {
     consume(TokenType::TOK_INSERT);
     consume(TokenType::TOK_INTO);
@@ -498,6 +537,15 @@ void Parser::parseSelect(DatabaseManager& manager) {
     std::vector<int> whereRows;
     if(match(TokenType::TOK_WHERE)) {
         whereRows = parseWhereClause(table);
+    }
+
+    if(match(TokenType::TOK_ORDER)) {
+        consume(TokenType::TOK_ORDER);
+
+        std::vector<Row> rows = table->selectAll();
+
+        if(match(TokenType::TOK_BY)) parseOrderBy(table, rows);
+        return;
     }
     
     consume(TokenType::TOK_SEMICOLON);

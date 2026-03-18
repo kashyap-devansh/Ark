@@ -41,6 +41,8 @@ enum class TokenType {
     TOK_WHERE,             // WHERE
     TOK_LIMIT,             // LIMIT
     TOK_LIKE,              // LIKE
+    TOK_ORDER,             // ORDER 
+    TOK_BY,                // BY
 
     // ----- Data Types -----
     TOK_INT,               // INT

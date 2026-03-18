@@ -35,6 +35,8 @@ private :
 
     int parseLimitValue();
 
+    void parseOrderBy(Table* table, const std::vector<Row>& rows);
+
     std::vector<int> parseLikeMatches(Table* table, int colIndex);
 
     std::vector<int> parseWhereClause(Table* table);
