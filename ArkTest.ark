@@ -1,19 +1,286 @@
+-- ============================================================
+--  FULL TEST SCRIPT FOR CUSTOM SQL ENGINE
+--  Tests every command, every error case, every edge case
+-- ============================================================
+
+
+-- ============================================================
+--  1. DATABASE OPERATIONS
+-- ============================================================
+
+-- Create a database
 CREATE DATABASE testdb;
+
+-- Use it
 USE testdb;
 
+-- Show all databases
+SHOW DATABASES;
+
+-- Drop the database (uncomment to test)
+-- DROP DATABASE testdb;
+-- USE testdb;  -- this should error: no current database
+
+
+-- ============================================================
+--  2. TABLE CREATION
+-- ============================================================
+
+-- Create a users table with all 4 supported types
 CREATE TABLE users (
-    id INT,
-    name STRING,
-    age INT,
-    score DOUBLE,
+    id     INT,
+    name   STRING,
+    score  DOUBLE,
     active BOOL
 );
 
-INSERT INTO users VALUES
-    (1, "Alice", 30, 9.5, true),
-    (2, "Bob", 25, 7.2, false),
-    (4, "David", 28, 6.5, true),
-    (5, "Aaron", 22, 9.1, false),
-    (3, "Charlie", 35, 8.8, true);
+-- Create a second table for join-style tests
+CREATE TABLE orders (
+    order_id  INT,
+    user_id   INT,
+    amount    DOUBLE,
+    status    STRING
+);
 
-SELECT * FROM users ORDER BY id;
+-- Show all tables
+SHOW TABLES;
+
+-- Show columns of users
+SHOW COLUMNS FROM users;
+
+-- Show columns of orders
+SHOW COLUMNS FROM orders;
+
+
+-- ============================================================
+--  3. INSERT — normal cases
+-- ============================================================
+
+INSERT INTO users VALUES
+    (1, "Alice", 95.5, true),
+    (2, "Bob",   80.0, false),
+    (3, "Carol", 72.3, true),
+    (4, "Dave",  91.0, true),
+    (5, "Eve",   60.0, false),
+    (6, "Alice", 55.0, false);
+
+INSERT INTO orders VALUES
+    (101, 1, 250.0, "shipped"),
+    (102, 2, 89.99, "pending"),
+    (103, 3, 430.0, "shipped"),
+    (104, 1, 15.0,  "cancelled"),
+    (105, 5, 999.0, "pending");
+
+SAVE;
+
+
+-- ============================================================
+--  4. SELECT — basic
+-- ============================================================
+
+-- Select all columns
+SELECT * FROM users;
+
+-- Select specific columns
+SELECT name, score FROM users;
+
+-- Select from orders
+SELECT order_id, status FROM orders;
+
+
+-- ============================================================
+--  5. SELECT — WHERE with all comparison operators
+-- ============================================================
+
+-- Equal
+SELECT * FROM users WHERE id == 3;
+
+-- Not equal
+SELECT * FROM users WHERE active != true;
+
+-- Greater than
+SELECT * FROM users WHERE score > 80.0;
+
+-- Less than
+SELECT * FROM users WHERE score < 75.0;
+
+-- Greater than or equal
+SELECT * FROM users WHERE score >= 91.0;
+
+-- Less than or equal
+SELECT * FROM users WHERE id <= 2;
+
+
+-- ============================================================
+--  6. SELECT — WHERE with AND / OR
+-- ============================================================
+
+-- AND: both conditions must be true
+SELECT * FROM users WHERE active == true AND score > 80.0;
+
+-- OR: either condition
+SELECT * FROM users WHERE id == 1 OR id == 5;
+
+-- Multiple AND chain
+SELECT * FROM users WHERE active == true AND score > 60.0 AND id > 2;
+
+
+-- ============================================================
+--  7. SELECT — LIKE
+-- ============================================================
+
+-- Starts-with pattern  (the only one currently supported)
+SELECT * FROM users WHERE name LIKE "A%";
+
+-- BUG EXPOSURE: These should work but currently exit with "Invalid syntax"
+-- because your LIKE parser only handles X% pattern:
+-- SELECT * FROM users WHERE name LIKE "%e";     -- ends with 'e'
+-- SELECT * FROM users WHERE name LIKE "%lic%";
+
+
+-- ============================================================
+--  8. SELECT — ORDER BY
+-- ============================================================
+
+-- Order by score ascending
+SELECT * FROM users ORDER BY score ASC;
+
+-- BUG EXPOSURE: DESC is not implemented — this will sort ascending anyway
+SELECT * FROM users ORDER BY score DESC;
+
+-- BUG EXPOSURE: WHERE + ORDER BY — the WHERE filter is ignored,
+-- all rows will be printed sorted instead of just active==true rows
+SELECT * FROM users WHERE active == true ORDER BY score ASC;
+
+
+-- ============================================================
+--  9. UPDATE — all rows (no WHERE)
+-- ============================================================
+
+-- Set all users inactive
+UPDATE users SET active = false;
+SELECT * FROM users;
+
+-- Restore active for all
+UPDATE users SET active = true;
+SELECT * FROM users;
+
+
+-- ============================================================
+-- 10. UPDATE — with WHERE
+-- ============================================================
+
+-- Update a single user's score
+UPDATE users SET score = 100.0 WHERE id == 1;
+SELECT * FROM users WHERE id == 1;
+
+-- Update multiple columns at once
+UPDATE users SET score = 50.0, active = false WHERE id == 5;
+SELECT * FROM users WHERE id == 5;
+
+
+-- ============================================================
+-- 11. UPDATE — with WHERE + LIMIT
+-- ============================================================
+
+-- Only update the first 1 matching row
+UPDATE users SET score = 77.0 WHERE active == true LIMIT 1;
+SELECT * FROM users;
+
+
+-- ============================================================
+-- 12. DELETE — with WHERE
+-- ============================================================
+
+-- Delete a specific row
+DELETE FROM users WHERE id == 6;
+SELECT * FROM users;
+
+-- Delete using LIKE
+DELETE FROM orders WHERE status LIKE "c%";
+SELECT * FROM orders;
+
+
+-- ============================================================
+-- 13. DELETE — with WHERE + LIMIT
+-- ============================================================
+
+-- BUG EXPOSURE: LIMIT deletes last matches, not first matches
+-- Insert duplicates to make this visible
+INSERT INTO users VALUES
+    (7, "TestA", 10.0, false),
+    (8, "TestB", 10.0, false),
+    (9, "TestC", 10.0, false);
+
+SELECT * FROM users WHERE score == 10.0;
+
+-- Should delete only the first 2 matches (id 7, 8) but will delete last 2 (id 8, 9)
+DELETE FROM users WHERE score == 10.0 LIMIT 2;
+SELECT * FROM users;
+
+
+-- ============================================================
+-- 14. DELETE — all rows
+-- ============================================================
+
+-- Wipe orders table entirely
+DELETE FROM orders;
+SELECT * FROM orders;
+
+
+-- ============================================================
+-- 15. NULL values
+-- ============================================================
+
+-- Insert a row with NULL values
+INSERT INTO users VALUES (10, NULL, NULL, NULL);
+SELECT * FROM users WHERE id == 10;
+
+-- BUG EXPOSURE: comparing NULL with == will not behave like SQL IS NULL
+-- This will likely return wrong results or crash:
+SELECT * FROM users WHERE score == NULL;
+
+
+-- ============================================================
+-- 16. ERROR CASES — wrong types / bad syntax
+-- ============================================================
+
+-- BUG EXPOSURE: type mismatch in WHERE — no type checking done,
+-- comparing INT column to a STRING value
+SELECT * FROM users WHERE id == "hello";
+
+-- BUG EXPOSURE: INSERT with wrong number of values — no column count check,
+-- this will silently insert a malformed row or crash
+INSERT INTO users VALUES (99, "BadRow");
+
+-- BUG EXPOSURE: WHERE clause with no valid operator — silently returns {}
+-- SELECT * FROM users WHERE id 5;
+
+
+-- ============================================================
+-- 17. SAVE and LOAD
+-- ============================================================
+
+SAVE;
+LOAD;
+
+-- Verify data is intact after load
+SELECT * FROM users;
+
+
+-- ============================================================
+-- 18. DROP TABLE
+-- ============================================================
+
+DROP TABLE orders;
+SHOW TABLES;
+
+-- This should error: table no longer exists
+-- SELECT * FROM orders;
+
+
+-- ============================================================
+-- 19. SHOW DATABASES
+-- ============================================================
+
+SHOW DATABASES;

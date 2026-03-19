@@ -3,6 +3,85 @@
 
 #include <iostream>
 
+Parser::Parser(const std::string& input, int startLine) : tokenizer(input, startLine) {
+    current = tokenizer.nextToken();
+}
+
+void Parser::advance() {
+    current = tokenizer.nextToken();
+}
+
+bool Parser::match(TokenType type) {
+    return current.getType() == type;
+}
+
+void Parser::consume(TokenType expected) {
+    if(!match(expected)) {
+        std::cerr << "Syntax error at line\n" << current.getLine() << ", column " << current.getColumn() << "\n";
+        exit(1);
+    }
+    advance();
+}
+
+DataType Parser::parseDataType() {
+    if(match(TokenType::TOK_INT)) {
+        advance();
+        return DataType::INT;
+    }
+
+    if(match(TokenType::TOK_DOUBLE)) {
+        advance();
+        return DataType::DOUBLE;
+    }
+
+    if(match(TokenType::TOK_STRING_TYPE)) {
+        advance();
+        return DataType::STRING;
+    }
+
+    if(match(TokenType::TOK_BOOL)) {
+        advance();
+        return DataType::BOOL;
+    }
+
+    std::cerr << "Invalid data type.\n";
+    exit(1);
+}
+
+Cell Parser::parseValue() {
+    if(match(TokenType::TOK_NUMBER)) {
+        std::string num = current.getLexeme();
+        advance();
+
+        if(num.find('.') != std::string::npos) return Cell(std::stod(num));
+        else return Cell(std::stoi(num));
+    }
+
+    if(match(TokenType::TOK_STRING)) {
+        std::string str = current.getLexeme();
+        advance();
+
+        return Cell(str);
+    }
+
+    if(match(TokenType::TOK_TRUE)) {
+        advance();
+        return Cell(true);
+    }
+
+    if(match(TokenType::TOK_FALSE)) {
+        advance();
+        return Cell(false);
+    }
+    if(match(TokenType::TOK_NULL)) {
+        advance();
+        return Cell();
+    }
+
+    std::cerr << "Invalid value.\n";
+    exit(1);
+}
+
 int Parser::parseLimitValue() {
     consume(TokenType::TOK_LIMIT);
     Cell cLimit = parseValue();
@@ -129,85 +208,6 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
     }
 
     return {};
-}
-
-Parser::Parser(const std::string& input, int startLine) : tokenizer(input, startLine) {
-    current = tokenizer.nextToken();
-}
-
-void Parser::advance() {
-    current = tokenizer.nextToken();
-}
-
-bool Parser::match(TokenType type) {
-    return current.getType() == type;
-}
-
-void Parser::consume(TokenType expected) {
-    if(!match(expected)) {
-        std::cerr << "Syntax error at line\n" << current.getLine() << ", column " << current.getColumn() << "\n";
-        exit(1);
-    }
-    advance();
-}
-
-DataType Parser::parseDataType() {
-    if(match(TokenType::TOK_INT)) {
-        advance();
-        return DataType::INT;
-    }
-
-    if(match(TokenType::TOK_DOUBLE)) {
-        advance();
-        return DataType::DOUBLE;
-    }
-
-    if(match(TokenType::TOK_STRING_TYPE)) {
-        advance();
-        return DataType::STRING;
-    }
-
-    if(match(TokenType::TOK_BOOL)) {
-        advance();
-        return DataType::BOOL;
-    }
-
-    std::cerr << "Invalid data type.\n";
-    exit(1);
-}
-
-Cell Parser::parseValue() {
-    if(match(TokenType::TOK_NUMBER)) {
-        std::string num = current.getLexeme();
-        advance();
-
-        if(num.find('.') != std::string::npos) return Cell(std::stod(num));
-        else return Cell(std::stoi(num));
-    }
-
-    if(match(TokenType::TOK_STRING)) {
-        std::string str = current.getLexeme();
-        advance();
-
-        return Cell(str);
-    }
-
-    if(match(TokenType::TOK_TRUE)) {
-        advance();
-        return Cell(true);
-    }
-
-    if(match(TokenType::TOK_FALSE)) {
-        advance();
-        return Cell(false);
-    }
-    if(match(TokenType::TOK_NULL)) {
-        advance();
-        return Cell();
-    }
-
-    std::cerr << "Invalid value.\n";
-    exit(1);
 }
 
 void Parser::parse(DatabaseManager& manager) {

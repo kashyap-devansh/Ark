@@ -4,7 +4,16 @@
 #include <fstream>
 #include <iostream>
 
-DatabaseManager::DatabaseManager() : hasActiveDatabase(false) {}
+DatabaseManager::DatabaseManager() : hasActiveDatabase(false) {
+    std::string base = "./databases/";
+    if(!std::filesystem::exists(base)) return;
+
+    for(const auto& entry : std::filesystem::directory_iterator(base)) {
+        if(entry.is_directory()) {
+            dbNames.push_back(entry.path().filename().string());
+        }
+    }
+}
 
 void DatabaseManager::createDatabase(const std::string& name) {
     std::string path = "./databases/" + name;
