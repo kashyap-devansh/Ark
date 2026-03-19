@@ -28,6 +28,8 @@ static const std::vector<Keyword> KeywordTable = {
     {"LIKE",     TokenType::TOK_LIKE},
     {"ORDER",    TokenType::TOK_ORDER},
     {"BY",       TokenType::TOK_BY},
+    {"ASC",      TokenType::TOK_ASC},
+    {"DESC",     TokenType::TOK_DESC},
     {"INT",      TokenType::TOK_INT},
     {"DOUBLE",   TokenType::TOK_DOUBLE},
     {"STRING",   TokenType::TOK_STRING_TYPE},

@@ -21,6 +21,7 @@ Unlike many projects that wrap existing engines or use parser generators, **Ark 
 
 Every single component of the pipeline is a custom, hand-written C++ implementation:
 - **Zero External Dependencies:** No third-party database APIs or parsing libraries are used.
+- **Composition over Inheritance:** In its Object-Oriented design, Ark rigorously utilizes **composition instead of inheritance**. This modern approach ensures loose coupling, superior modularity, and high-performance execution without the overhead of deep class hierarchies.
 - **Custom Lexical Tokenizer & Parser:** Hand-rolled lexical analysis and Abstract Syntax Tree (AST) generation.
 - **Native Execution Engine:** Custom in-memory table structures, data types, and row filtering algorithms.
 - **Raw Disk Persistence:** Custom serialization for saving and loading databases directly to disk.
@@ -69,10 +70,11 @@ Ark boasts a powerful conditional filtering engine:
 - **Relational Operators**: `==`, `!=`, `<`, `>`, `<=`, `>=`.
 - **Logical Chaining**: Combine multiple conditions natively using `AND` & `OR`.
 - **Pattern Matching**: Find string patterns using `LIKE '<char>%'`.
+- **Sorting Results**: Sort your queried data using `ORDER BY <col> [ASC | DESC]`.
 - **Output Control**: Restrict output or mutation counts using `LIMIT <n>`.
 - **Pretty Print**: Built-in formatted border tables for `SELECT` and `SHOW` commands, adjusting dynamically to content size.
 
-> *Note: Graph-based database systems and advanced Error Logging systems are currently planned for future updates.*
+> *Note: 🚨 An advanced, robust **Error Handling and Logging system** is currently beginning to be actively integrated into Ark! This highly-requested feature will provide clear, actionable query diagnostics and syntax error reporting. Graph-based database systems are also planned for future updates.*
 
 ---
 
@@ -103,6 +105,8 @@ SELECT * FROM <table>;
 SELECT <col1>, <col2> FROM <table> WHERE <col> == <val>;
 SELECT * FROM <table> WHERE <col> == <val> AND <col2> != <val2>;
 SELECT * FROM <table> WHERE <col> LIKE '<c>%';
+SELECT * FROM <table> ORDER BY <col> ASC;
+SELECT * FROM <table> WHERE <col> > <val> ORDER BY <col2> DESC LIMIT <n>;
 
 -- ════════ DATA UPDATES ═════════════
 UPDATE <table> SET <col> = <val> [, ...] WHERE <col> == <val> LIMIT <n>;

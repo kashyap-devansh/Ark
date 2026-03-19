@@ -443,21 +443,35 @@ void Parser::parseOrderBy(Table* table) {
         exit(EXIT_FAILURE);
     }
 
+    TokenType order = current.getType();
+    if(match(TokenType::TOK_ASC) || match(TokenType::TOK_DESC)) consume(order);
+
     std::vector<int> sortedRows;
-    for (int i = 0; i < (int)rows.size(); i++) {
+    for(int i = 0; i < (int)rows.size(); i++) {
         sortedRows.push_back(i);
     }
 
-    for (int i = 0; i < (int)sortedRows.size() - 1; i++) {
+    for(int i = 0; i < (int)sortedRows.size() - 1; i++) {
         bool swapped = false;
 
-        for (int j = 0; j < (int)sortedRows.size() - i - 1; j++) {
-            if (rows[sortedRows[j]].getCell(colNumber) > rows[sortedRows[j + 1]].getCell(colNumber)) {
-                std::swap(sortedRows[j], sortedRows[j + 1]);
-                swapped = true;
+        if(order == TokenType::TOK_ASC) {
+            for(int j = 0; j < (int)sortedRows.size() - i - 1; j++) {
+                if(rows[sortedRows[j]].getCell(colNumber) > rows[sortedRows[j + 1]].getCell(colNumber)) {
+                    std::swap(sortedRows[j], sortedRows[j + 1]);
+                    swapped = true;
+                }
             }
         }
-        if (!swapped) break;
+        else if(order == TokenType::TOK_DESC) {
+            for(int j = 0; j < (int)sortedRows.size() - i - 1; j++) {
+                if(rows[sortedRows[j]].getCell(colNumber) < rows[sortedRows[j + 1]].getCell(colNumber)) {
+                    std::swap(sortedRows[j], sortedRows[j + 1]);
+                    swapped = true;
+                }
+            }
+        }
+
+        if(!swapped) break;
     }
 
     std::vector<int> columnIndexes;
