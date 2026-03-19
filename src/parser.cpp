@@ -428,8 +428,10 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
 }
 
 // SELECT * FROM users ORDER BY score ASC;
-void Parser::parseOrderBy(Table* table, const std::vector<Row>& rows) {
+void Parser::parseOrderBy(Table* table) {
     consume(TokenType::TOK_BY);
+
+    std::vector<Row> rows = table->selectAll();
 
     std::string colName = current.getLexeme();
     consume(TokenType::TOK_IDENTIFIER);
@@ -542,9 +544,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
     if(match(TokenType::TOK_ORDER)) {
         consume(TokenType::TOK_ORDER);
 
-        std::vector<Row> rows = table->selectAll();
-
-        if(match(TokenType::TOK_BY)) parseOrderBy(table, rows);
+        if(match(TokenType::TOK_BY)) parseOrderBy(table);
         return;
     }
     

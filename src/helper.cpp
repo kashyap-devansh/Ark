@@ -96,22 +96,15 @@ void printTableResult(Table* table, const std::vector<int>& colIndexes, const st
 
     printBorder(widths, colIndexes);
 
-    for(int r = 0; r < table->getRowCount(); r++) {
-        if(!rowIndexes.empty()) {
-            bool allowed = false;
+    std::vector<Row> allRows = table->selectAll();
 
-            for(int idx : rowIndexes) {
-                if(idx == r) {
-                    allowed = true;
-                    break;
-                }
-            }
+    std::vector<int> order;
+    
+    if(rowIndexes.empty()) for(int i = 0; i < table->getRowCount(); i++) order.push_back(i); 
+    else order = rowIndexes;
 
-            if(!allowed) continue;
-
-        }
-
-        const Row row = table->selectAll()[r];
+    for(int r : order) {
+        const Row row = allRows[r];
         std::cout << "|";
 
         for(int i = 0; i < colIndexes.size(); i++) {
@@ -123,7 +116,7 @@ void printTableResult(Table* table, const std::vector<int>& colIndexes, const st
         }
 
         std::cout << "\n";
-    } 
+    }
 
     printBorder(widths, colIndexes);
 }
