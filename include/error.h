@@ -4,55 +4,93 @@
 
 #include <exception>
 #include <stdexcept>
+#include <string>
 
-class ArkError : public std::exception {
-private :
+#define DIVIDER "============================================================\n"
+
+enum class SyntaxError {
+    UNEXPECTED_TOKEN,
+    UNRECOGNIZED_DATA_TYPE,
+    UNRECOGNIZED_VALUE,
+    INVALID_LIKE_PATTERN,
+    EXPECTED_STRING_AFTER_LIKE,
+    UNKNOWN_CREATE_KEYWORD,
+    UNKNOWN_DROP_KEYWORD,
+    UNKNOWN_SHOW_KEYWORD,
+    UNKNOWN_COMMAND,
+};
+
+enum class TypeError {
+    LIMIT_NOT_INT,
+    LIKE_REQUIRES_STRING,
+    INVALID_NUMERIC_LITERAL,
+    NEGATIVE_LIMIT,
+};
+
+enum class RuntimeError {
+    COLUMN_NOT_FOUND,
+    TABLE_NOT_FOUND,
+    NO_DATABASES,
+    COLUMN_COUNT_MISMATCH,
+};
+
+enum class LogicError {
+    MISSING_EXIT_AFTER_ERROR,
+};
+
+namespace detail {
+    const char* toString(SyntaxError code);
+    const char* toString(TypeError code);
+    const char* toString(RuntimeError code);
+}
+
+class ArkException : public std::exception {
+protected:
     int lineNumber;
-    int columNumber;
+    int columnNumber;
     std::string errorLexeme;
     std::string correctLexeme;
 
-public :
-    ArkError(const int lineNumber, const int columNumber, const std::string errorLexeme, const std::string correctLexme) : lineNumber(lineNumber), columNumber(columNumber), errorLexeme(errorLexeme), correctLexeme(correctLexeme) {};
-
+public:
+    ArkException(const int lineNumber, const int columnNumber, const std::string errorLexeme, const std::string correctLexeme);
     virtual const char* what() const noexcept = 0;
 };
 
-class SyntaxError : public ArkError {
-public :
-    SyntaxError(const int lineNumber, const int columNumber, const std::string errorLexeme, const std::string correctLexme) : ArkError(lineNumber, columNumber, errorLexeme, correctLexme) {}
+class SyntaxException : public ArkException {
+private:
+    SyntaxError code;
+    mutable std::string m_message;
 
-    const char* what() const noexcept override {
-        
-    }
+public:
+    SyntaxException(const SyntaxError code, const int lineNumber, const int columnNumber, const std::string errorLexeme, const std::string correctLexeme);
+    const char* what() const noexcept override;
 };
 
-class TypeError : public ArkError {
-public :
-    const char* what() const noexcept override {
+class TypeException : public ArkException {
+private:
+    TypeError code;
+    mutable std::string m_message;
 
-    }
+public:
+    TypeException(const TypeError code, const int lineNumber, const int columnNumber, const std::string errorLexeme, const std::string correctLexeme);
+    const char* what() const noexcept override;
 };
 
-class ValueError : public ArkError {
-public :
-    const char* what() const noexcept override {
+class RuntimeException : public ArkException {
+private:
+    RuntimeError code;
+    mutable std::string m_message;
 
-    }
+public:
+    RuntimeException(const RuntimeError code, const int lineNumber, const int columnNumber, const std::string errorLexeme, const std::string correctLexeme);
+    const char* what() const noexcept override;
 };
 
-class RunTimeError : public ArkError {
-public :
-    const char* what() const noexcept override {
+// class Logic : public ArkError {
+// public :
+//     const char* what() const noexcept override {
 
-    }
-};
-
-class LogicError : public ArkError {
-public :
-    const char* what() const noexcept override {
-
-    }
-};
+//     }
+// };
 
 #endif

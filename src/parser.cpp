@@ -1,5 +1,7 @@
 #include "parser.h"
 #include "helper.h"
+#include "error.h"
+using namespace std;
 
 #include <iostream>
 
@@ -15,12 +17,10 @@ bool Parser::match(TokenType type) {
     return current.getType() == type;
 }
 
-void Parser::consume(TokenType expected) {
-    if(!match(expected)) {
-        std::cerr << "Syntax error at line\n" << current.getLine() << ", column " << current.getColumn() << "\n";
-        exit(1);
-    }
+bool Parser::consume(TokenType expected) {
+    if(!match(expected)) return false;
     advance();
+    return true;
 }
 
 DataType Parser::parseDataType() {
@@ -44,8 +44,7 @@ DataType Parser::parseDataType() {
         return DataType::BOOL;
     }
 
-    std::cerr << "Invalid data type.\n";
-    exit(1);
+    throw SyntaxException(SyntaxError::UNRECOGNIZED_DATA_TYPE, current.getLine(), current.getColumn(), current.getLexeme(), "");
 }
 
 Cell Parser::parseValue() {
@@ -78,8 +77,7 @@ Cell Parser::parseValue() {
         return Cell();
     }
 
-    std::cerr << "Invalid value.\n";
-    exit(1);
+    throw SyntaxException(SyntaxError::UNRECOGNIZED_VALUE, current.getLine(), current.getColumn(), current.getLexeme(), "");
 }
 
 int Parser::parseLimitValue() {
@@ -87,15 +85,13 @@ int Parser::parseLimitValue() {
     Cell cLimit = parseValue();
 
     if(!cLimit.isInt()) {
-        std::cerr << "Limit value must be INT\n";
-        exit(1);
+        throw TypeException(TypeError::LIMIT_NOT_INT, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     int limit = cLimit.getInt();
 
     if(limit < 0) {
-        std::cerr << "LIMIT cannot be negative\n";
-        exit(1);
+        TypeException(TypeError::NEGATIVE_LIMIT, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     return limit;
@@ -112,16 +108,14 @@ std::vector<int> Parser::parseLikeMatches(Table* table, int colIndex) {
     bool isString = match(TokenType::TOK_STRING);
 
     if(!isString) {
-        std::cerr << "To delete like the given value should be string\n";
-        exit(EXIT_FAILURE);
+        throw SyntaxException(SyntaxError::EXPECTED_STRING_AFTER_LIKE, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     std::string wordLike = current.getLexeme();
     consume(TokenType::TOK_STRING);
 
     if(!(wordLike[1] == '%')) {
-        std::cerr << "Invalid syntax\n";
-        exit(EXIT_FAILURE);
+        throw SyntaxException(SyntaxError::INVALID_LIKE_PATTERN, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     char findWordWith = wordLike[0];
@@ -149,8 +143,7 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
     int colNumber = getColumnIndex(table, columnName);
 
     if(colNumber == -1) {
-        std::cerr << "No column found with name : " << columnName << "\n";
-        exit(EXIT_FAILURE);
+        throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     if(match(TokenType::TOK_LIKE)) {
@@ -184,8 +177,7 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
 
             int nextColIndex = getColumnIndex(table, nextCol);
             if(nextColIndex == -1) {
-                std::cerr << "No column found with name : " << nextCol << "\n";
-                exit(EXIT_FAILURE);
+                throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
             }
 
             TokenType nextOp = current.getType();
@@ -235,7 +227,7 @@ void Parser::parse(DatabaseManager& manager) {
             break;
         }
 
-        default : std::cerr << "Unknown command.\n";
+        default : throw SyntaxException(SyntaxError::UNKNOWN_COMMAND, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 }
 
@@ -373,8 +365,7 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
 
     Table* table = db->getTable(tableName);
     if(!table) {
-        std::cerr << "Table not found: " << tableName << "\n";
-        return;
+        throw RuntimeException(RuntimeError::TABLE_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     std::vector<int> columnIndexes;
@@ -439,8 +430,7 @@ void Parser::parseOrderBy(Table* table) {
     int colNumber = getColumnIndex(table, colName);
 
     if (colNumber == -1) {
-        std::cerr << "No column found with name : " << colName << "\n";
-        exit(EXIT_FAILURE);
+        throw RuntimeException(RuntimeError::TABLE_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     TokenType order = current.getType();

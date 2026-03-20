@@ -12,7 +12,7 @@ private :
     Token current;
 
     void advance();
-    void consume(TokenType expected);
+    bool consume(TokenType expected);
     bool match(TokenType type);
 
     void parseUse(DatabaseManager& manager);
