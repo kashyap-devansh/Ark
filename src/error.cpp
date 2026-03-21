@@ -220,7 +220,7 @@ const char* RuntimeException::what() const noexcept {
             m_message += DIVIDER;
             m_message += "RUNTIME ERROR: Column not found\n";
             m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
-            m_message += "MESSAGE: Column '" + errorLexeme + "' does not exist in the table.\n";
+            m_message += "MESSAGE: Column '" + errorLexeme + "' does not exist in Table '" + correctLexeme + "'. \n";
             m_message += location;
             m_message += DIVIDER;
             break;
@@ -230,7 +230,7 @@ const char* RuntimeException::what() const noexcept {
             m_message += DIVIDER;
             m_message += "RUNTIME ERROR: Table not found\n";
             m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
-            m_message += "MESSAGE: Table '" + errorLexeme + "' does not exist in the database.\n";
+            m_message += "MESSAGE: Table '" + errorLexeme + "' does not exist in Database '" + correctLexeme + "'. \n";
             m_message += location;
             m_message += DIVIDER;
             break;

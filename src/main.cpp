@@ -3,6 +3,7 @@
 
 #include "parser.h"
 #include "databaseManager.h"
+#include "error.h"
 
 int main(int argc, char* argv[]) {
     if(argc < 2) {
@@ -37,8 +38,15 @@ int main(int argc, char* argv[]) {
 
         if(ch == ';') {
             
-            Parser parser(command, commandStartLine);
-            parser.parse(manager);
+            try {
+                Parser parser(command, commandStartLine);
+                parser.parse(manager); 
+            }
+            catch(const ArkException& e) {
+                std::cerr << e.what() << "\n";
+
+                return 1;
+            }
 
             command.clear();
 

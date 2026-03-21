@@ -99,8 +99,7 @@ int Parser::parseLimitValue() {
 
 std::vector<int> Parser::parseLikeMatches(Table* table, int colIndex) {
     if(!(table->getColumnType(colIndex) == DataType::STRING)) {
-        std::cerr << "To use \"LIKE\" the column must be of type string\n";
-        exit(EXIT_FAILURE);
+        throw TypeException(TypeError::LIKE_REQUIRES_STRING, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     consume(TokenType::TOK_LIKE);
@@ -143,7 +142,7 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
     int colNumber = getColumnIndex(table, columnName);
 
     if(colNumber == -1) {
-        throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
+        throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), columnName, table->getName());
     }
 
     if(match(TokenType::TOK_LIKE)) {
@@ -177,7 +176,7 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
 
             int nextColIndex = getColumnIndex(table, nextCol);
             if(nextColIndex == -1) {
-                throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
+                throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), columnName, table->getName());
             }
 
             TokenType nextOp = current.getType();
@@ -365,7 +364,7 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
 
     Table* table = db->getTable(tableName);
     if(!table) {
-        throw RuntimeException(RuntimeError::TABLE_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
+        throw RuntimeException(RuntimeError::TABLE_NOT_FOUND, current.getLine(), current.getColumn(), tableName, db->getName());
     }
 
     std::vector<int> columnIndexes;
@@ -418,7 +417,6 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     printBorder(widths, columnIndexes);
 }
 
-// SELECT * FROM users ORDER BY score ASC;
 void Parser::parseOrderBy(Table* table) {
     consume(TokenType::TOK_BY);
 
@@ -429,8 +427,8 @@ void Parser::parseOrderBy(Table* table) {
 
     int colNumber = getColumnIndex(table, colName);
 
-    if (colNumber == -1) {
-        throw RuntimeException(RuntimeError::TABLE_NOT_FOUND, current.getLine(), current.getColumn(), current.getLexeme(), "");
+    if(colNumber == -1) {
+        throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), colName, table->getName());
     }
 
     TokenType order = current.getType();
@@ -565,8 +563,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
             int colIndex = getColumnIndex(table, colName);
 
             if(colIndex == -1) {
-                std::cerr << "Column not found: " << colName << "\n";
-                return;
+                throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), colName, table->getName()); 
             }
 
             columnIndexes.push_back(colIndex);
@@ -600,8 +597,7 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         int colIndex = getColumnIndex(table, columnNames[columnCounter]);
 
         if(colIndex == -1) {
-            std::cerr << "No column found with name: " << columnNames[columnCounter] << "\n";
-            return;
+            throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), columnNames[columnCounter], table->getName());
         }
         updateColumnIndexes.push_back(getColumnIndex(table, columnNames[columnCounter]));
         columnCounter++;

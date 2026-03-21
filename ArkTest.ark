@@ -24,4 +24,4 @@ INSERT INTO users VALUES
     (5, "Eve",   60.0, false),
     (6, "Alice", 55.0, false);
 
-SELECT * FROM users ORDER BY id DESC;
+SELECT * FROM users ORDER BY i DESC;
