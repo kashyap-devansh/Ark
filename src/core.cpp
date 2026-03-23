@@ -228,23 +228,22 @@ int Table::getRowCount() const {
     return static_cast<int>(rows.size());
 }
 
-bool Table::validateRow(const Row& row) const {
-    if(row.getCellCount() != static_cast<int>(columns.size())) return false;
+ValidationResult Table::validateRow(const Row& row) const {
+    if(row.getCellCount() != static_cast<int>(columns.size())) return ValidationResult::COUNT_MISMATCH;
 
     for(size_t i = 0; i < columns.size(); i++) {
-        if(row.getCell(i).getType() != columns.at(i).getType()) return false;
+        if(row.getCell(i).getType() != columns.at(i).getType()) return ValidationResult::TYPE_MISMATCH;
     }
 
-    return true;
+    return ValidationResult::OK;
 }
 
-void Table::insertRow(const Row& row) {
-    if(!validateRow(row)) {
-        std::cout << "Row Validation failed. Cannot insert.\n";
-        return;
-    }
+ValidationResult Table::insertRow(const Row& row) {
+    ValidationResult result = validateRow(row);
+    if (result != ValidationResult::OK) return result;
 
     rows.push_back(row);
+    return ValidationResult::OK;
 }
 
 Row* Table::getRow(int rowIndex) {
@@ -419,7 +418,7 @@ bool Table::loadDataFromFile() {
             columnIndex++;
         }
 
-        if(validateRow(row)) rows.push_back(row);
+        if(validateRow(row) == ValidationResult::OK) rows.push_back(row);
     }
 
     fin.close();

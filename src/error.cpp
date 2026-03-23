@@ -32,6 +32,7 @@ namespace detail {
             case RuntimeError::TABLE_NOT_FOUND : return "TABLE_NOT_FOUND";
             case RuntimeError::NO_DATABASES : return "NO_DATABASES";
             case RuntimeError::COLUMN_COUNT_MISMATCH : return "COLUMN_COUNT_MISMATCH";
+            case RuntimeError::LIKE_PATTERN_TOO_SHORT : return "LIKE_PATTERN_TOO_SHORT";
             default : return "UNKOWN";
         }
     }
@@ -125,6 +126,16 @@ const char* SyntaxException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
+        case SyntaxError::EXPECTED_COMPARISON_OPERATOR : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "SYNTAX ERROR: Expected comparison operator\n";
+            m_message += "CODE: E-SYNTAX-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: Expected a comparison operator (==, !=, >=, <=, >, <) but got '" + errorLexeme + "'.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
         case SyntaxError::UNKNOWN_COMMAND : {
             m_message  = "\n";
             m_message += DIVIDER;
@@ -155,7 +166,7 @@ const char* TypeException::what() const noexcept {
     std::string location = "LINE: " + std::to_string(lineNumber) + ", COLUMN: " + std::to_string(columnNumber) + "\n";
 
     switch(code) {
-        case TypeError::LIMIT_NOT_INT: {
+        case TypeError::LIMIT_NOT_INT : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "TYPE ERROR: Invalid LIMIT value\n";
@@ -175,7 +186,7 @@ const char* TypeException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
-        case TypeError::LIKE_REQUIRES_STRING: {
+        case TypeError::LIKE_REQUIRES_STRING : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "TYPE ERROR: LIKE requires a STRING column\n";
@@ -185,7 +196,7 @@ const char* TypeException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
-        case TypeError::INVALID_NUMERIC_LITERAL: {
+        case TypeError::INVALID_NUMERIC_LITERAL : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "TYPE ERROR: Invalid numeric literal\n";
@@ -215,7 +226,7 @@ const char* RuntimeException::what() const noexcept {
     std::string location = "LINE: " + std::to_string(lineNumber) + ", COLUMN: " + std::to_string(columnNumber) + "\n";
 
     switch(code) {
-        case RuntimeError::COLUMN_NOT_FOUND: {
+        case RuntimeError::COLUMN_NOT_FOUND : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "RUNTIME ERROR: Column not found\n";
@@ -225,7 +236,7 @@ const char* RuntimeException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
-        case RuntimeError::TABLE_NOT_FOUND: {
+        case RuntimeError::TABLE_NOT_FOUND : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "RUNTIME ERROR: Table not found\n";
@@ -235,7 +246,7 @@ const char* RuntimeException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
-        case RuntimeError::NO_DATABASES: {
+        case RuntimeError::NO_DATABASES : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "RUNTIME ERROR: No databases found\n";
@@ -245,13 +256,32 @@ const char* RuntimeException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
-        case RuntimeError::COLUMN_COUNT_MISMATCH: {
+        case RuntimeError::COLUMN_COUNT_MISMATCH : {
             m_message  = "\n";
             m_message += DIVIDER;
             m_message += "RUNTIME ERROR: Column count mismatch\n";
             m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
             m_message += "MESSAGE: INSERT value count does not match column count. Got '" + errorLexeme + "', expected '" + correctLexeme + "'.\n";
             m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
+        case RuntimeError::INSERT_TYPE_MISMATCH : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: Type mismatch on insert\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: One or more values do not match the column types of Table '" + errorLexeme + "'.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
+        case RuntimeError::LIKE_PATTERN_TOO_SHORT : {
+            m_message = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: LIKE pattern too short\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: The LIKE pattern '" + errorLexeme + "' is too short. Pattern must be at least 2 characters long (e.g. 'A%').\n";
             m_message += DIVIDER;
             break;
         }

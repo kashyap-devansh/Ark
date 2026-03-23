@@ -17,6 +17,7 @@ enum class SyntaxError {
     UNKNOWN_CREATE_KEYWORD,
     UNKNOWN_DROP_KEYWORD,
     UNKNOWN_SHOW_KEYWORD,
+    EXPECTED_COMPARISON_OPERATOR,
     UNKNOWN_COMMAND,
 };
 
@@ -29,9 +30,11 @@ enum class TypeError {
 
 enum class RuntimeError {
     COLUMN_NOT_FOUND,
+    INSERT_TYPE_MISMATCH,
     TABLE_NOT_FOUND,
     NO_DATABASES,
     COLUMN_COUNT_MISMATCH,
+    LIKE_PATTERN_TOO_SHORT,
 };
 
 enum class LogicError {

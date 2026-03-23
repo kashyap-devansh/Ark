@@ -91,7 +91,7 @@ int Parser::parseLimitValue() {
     int limit = cLimit.getInt();
 
     if(limit < 0) {
-        TypeException(TypeError::NEGATIVE_LIMIT, current.getLine(), current.getColumn(), current.getLexeme(), "");
+        throw TypeException(TypeError::NEGATIVE_LIMIT, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
     return limit;
@@ -111,24 +111,51 @@ std::vector<int> Parser::parseLikeMatches(Table* table, int colIndex) {
     }
 
     std::string wordLike = current.getLexeme();
+    std::cout << "DEBUG wordLike: [" << wordLike << "]\n";
     consume(TokenType::TOK_STRING);
 
-    if(!(wordLike[1] == '%')) {
-        throw SyntaxException(SyntaxError::INVALID_LIKE_PATTERN, current.getLine(), current.getColumn(), current.getLexeme(), "");
+    std::vector<int> result;
+
+    if(wordLike.empty() || wordLike.length() < 2) {
+        throw RuntimeException(RuntimeError::LIKE_PATTERN_TOO_SHORT, current.getLine(), current.getColumn(), current.getLexeme(), "");
     }
 
-    char findWordWith = wordLike[0];
-    std::vector<Row> rows = table->selectAll();
+    if(wordLike.length() == 2) {
+        if(wordLike[0] == '%') {
+            char findWordWith = wordLike[1];
+            std::vector<Row> rows = table->selectAll();
 
-    std::vector<int> result;
-    for(int i = 0; i < rows.size(); i++) {
-        Cell val = rows[i].getCell(colIndex);
-        char firstLetter = val.getString()[0];
+            for(int i = 0; i < static_cast<int>(rows.size()); i++) {
+                Cell val = rows[i].getCell(colIndex);
+                std::string s = val.getString();
 
-        if(findWordWith == firstLetter) {
-            result.push_back(i);
+                if(!s.empty() && findWordWith == s[s.length() - 1]) result.push_back(i);
+            }
+        }
+        else if(wordLike[1] == '%') {
+            char findWordWith = wordLike[0];
+            std::vector<Row> rows = table->selectAll();
+
+            for(int i = 0; i < static_cast<int>(rows.size()); i++) {
+                Cell val = rows[i].getCell(colIndex);
+                std::string s = val.getString();
+
+                if(!s.empty() && findWordWith == s[0]) result.push_back(i);
+            }
+        }
+        else throw SyntaxException(SyntaxError::INVALID_LIKE_PATTERN, current.getLine(), current.getColumn(), current.getLexeme(), "");
+    }
+    else if(wordLike[0] == '%' && wordLike[wordLike.length() - 1] == '%') {
+        std::string findWord = wordLike.substr(1, wordLike.length() - 2);
+        std::vector<Row> rows = table->selectAll();
+
+        for(int i = 0; i < static_cast<int>(rows.size()); i++) {
+            Cell val = rows[i].getCell(colIndex);
+
+            if(val.getString().find(findWord) != std::string::npos) result.push_back(i);
         }
     }
+    else throw SyntaxException(SyntaxError::INVALID_LIKE_PATTERN, current.getLine(), current.getColumn(), current.getLexeme(), "");
 
     return result;
 }
@@ -417,7 +444,7 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     printBorder(widths, columnIndexes);
 }
 
-void Parser::parseOrderBy(Table* table) {
+void Parser::parseOrderBy(Table* table, std::vector<int> whereRows) {
     consume(TokenType::TOK_BY);
 
     std::vector<Row> rows = table->selectAll();
@@ -435,8 +462,11 @@ void Parser::parseOrderBy(Table* table) {
     if(match(TokenType::TOK_ASC) || match(TokenType::TOK_DESC)) consume(order);
 
     std::vector<int> sortedRows;
-    for(int i = 0; i < (int)rows.size(); i++) {
-        sortedRows.push_back(i);
+    if (!whereRows.empty()) sortedRows = whereRows;
+    else {
+        for (int i = 0; i < (int)rows.size(); i++) {
+            sortedRows.push_back(i);
+        }
     }
 
     for(int i = 0; i < (int)sortedRows.size() - 1; i++) {
@@ -497,7 +527,14 @@ void Parser::parseInsert(DatabaseManager& manager) {
 
         consume(TokenType::TOK_RPAREN);
 
-        table->insertRow(row);
+        ValidationResult result = table->insertRow(row);
+
+        if(result == ValidationResult::COUNT_MISMATCH) {
+            throw RuntimeException(RuntimeError::COLUMN_COUNT_MISMATCH, current.getLine(), current.getColumn(), std::to_string(row.getCellCount()), std::to_string(table->getColumnCount()));
+        }
+        else if(result == ValidationResult::TYPE_MISMATCH) {
+            throw RuntimeException(RuntimeError::INSERT_TYPE_MISMATCH, current.getLine(), current.getColumn(), tableName, "");
+        }
 
         if(match(TokenType::TOK_COMMA)) consume(TokenType::TOK_COMMA);
         else break;
@@ -546,7 +583,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
     if(match(TokenType::TOK_ORDER)) {
         consume(TokenType::TOK_ORDER);
 
-        if(match(TokenType::TOK_BY)) parseOrderBy(table);
+        if(match(TokenType::TOK_BY)) parseOrderBy(table, whereRows);
         return;
     }
     

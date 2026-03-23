@@ -21,6 +21,12 @@ union Value {
     bool Bool;
 };
 
+enum class ValidationResult { 
+    OK, 
+    COUNT_MISMATCH, 
+    TYPE_MISMATCH 
+};
+
 //====================================================================== COLUMN ======================================================================
 
 class Column {
@@ -108,7 +114,7 @@ private :
     std::string structureFilePath;
     std::string dataFilePath;
 
-    bool validateRow(const Row& row) const;
+    ValidationResult validateRow(const Row& row) const;
 
 public :
     Table(const std::string& name, const std::string& structurePath, const std::string& dataPath);
@@ -123,7 +129,7 @@ public :
 
     int getRowCount() const;
 
-    void insertRow(const Row& row);
+    ValidationResult insertRow(const Row& row);
 
     void updateCell(int rowIndex, int columnIndex, const Cell& newValue);
 
