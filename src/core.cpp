@@ -447,21 +447,17 @@ Table* Database::getTable(const std::string& tableName) {
     return nullptr;
 }
 
-void Database::createTable(const std::string& tableName) {
-    if(getTable(tableName) != nullptr) {
-        std::cerr << "Table already exists.\n";
-        return;
-    }
+bool Database::createTable(const std::string& tableName) {
+    if(getTable(tableName) != nullptr) return false;
 
     std::string structurePath = databaseFolderPath + "/tables/" + tableName + ".tbl";
     std::string dataPath = databaseFolderPath + "/data/" + tableName + ".dat";
 
-    if(std::filesystem::exists(structurePath) || std::filesystem::exists(dataPath)) {
-        std::cerr << "Table already exists (files on disk).\n";
-        return;
-    }
+    if(std::filesystem::exists(structurePath) || std::filesystem::exists(dataPath)) return false;
 
     tables.emplace_back(Table(tableName, structurePath, dataPath));
+
+    return true;
 }
 
 void Database::dropTable(const std::string& tableName) {

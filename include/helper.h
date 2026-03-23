@@ -9,6 +9,8 @@ struct Condition {
     Cell value;
 };
 
+std::string tokenTypeToString(TokenType type);
+
 void printBorder(const std::vector<int>& widths, const std::vector<int>& columnIndexes);
 
 bool evaluateCondition(const Cell& left, TokenType op, const Cell& right);

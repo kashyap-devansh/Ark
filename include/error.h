@@ -35,6 +35,9 @@ enum class RuntimeError {
     NO_DATABASES,
     COLUMN_COUNT_MISMATCH,
     LIKE_PATTERN_TOO_SHORT,
+    TABLE_ALREADY_EXISTS,
+    DUPLICATE_COLUMN_NAME,
+    NO_DATABASE_SELECTED,
 };
 
 enum class LogicError {

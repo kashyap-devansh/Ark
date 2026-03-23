@@ -17,10 +17,10 @@ bool Parser::match(TokenType type) {
     return current.getType() == type;
 }
 
-bool Parser::consume(TokenType expected) {
-    if(!match(expected)) return false;
+void Parser::consume(TokenType expected) {
+    if(!match(expected)) throw SyntaxException(SyntaxError::UNEXPECTED_TOKEN, current.getLine(), current.getColumn(), current.getLexeme(), tokenTypeToString(expected));
     advance();
-    return true;
+    return;
 }
 
 DataType Parser::parseDataType() {
@@ -225,7 +225,7 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
         return result;
     }
 
-    return {};
+    throw SyntaxException(SyntaxError::EXPECTED_COMPARISON_OPERATOR, current.getLine(), current.getColumn(), current.getLexeme(), "");
 }
 
 void Parser::parse(DatabaseManager& manager) {
@@ -241,14 +241,18 @@ void Parser::parse(DatabaseManager& manager) {
 
         case TokenType::TOK_SAVE   : {
             Database* db = manager.getCurrentDatabase();
-            if(db) db->saveDatabase();
+            if(!db) throw RuntimeException(RuntimeError::NO_DATABASE_SELECTED, current.getLine(), current.getColumn(), current.getLexeme(), "");
+
+            db->saveDatabase();
             advance();
             break;
         }
 
         case TokenType::TOK_LOAD   : {
             Database* db = manager.getCurrentDatabase();
-            if(db) db->loadDatabase();
+            if(!db) throw RuntimeException(RuntimeError::NO_DATABASE_SELECTED, current.getLine(), current.getColumn(), current.getLexeme(), "");
+            
+            db->loadDatabase();
             advance();
             break;
         }
@@ -280,13 +284,25 @@ void Parser::parseCreate(DatabaseManager& manager) {
         std::string tableName = current.getLexeme();
         consume(TokenType::TOK_IDENTIFIER);
 
-        db->createTable(tableName);
+        bool created = db->createTable(tableName);
+        if(!created) throw RuntimeException(RuntimeError::TABLE_ALREADY_EXISTS, current.getLine(), current.getColumn(), tableName, db->getName());
+
         Table* table = db->getTable(tableName);
 
         consume(TokenType::TOK_LPAREN);
 
+        std::vector<std::string> columnNames;
         while(!match(TokenType::TOK_RPAREN)) {
             std::string columnName = current.getLexeme();
+
+            for(int i = 0; i < static_cast<int>(columnNames.size()); i++) {
+                if(columnName == columnNames[i]) {
+                    throw RuntimeException(RuntimeError::DUPLICATE_COLUMN_NAME, current.getLine(), current.getColumn(), columnName, tableName);
+                }
+            }
+
+            columnNames.push_back(columnName);
+
             consume(TokenType::TOK_IDENTIFIER);
 
             DataType type = parseDataType();
@@ -298,6 +314,7 @@ void Parser::parseCreate(DatabaseManager& manager) {
         consume(TokenType::TOK_RPAREN);
         consume(TokenType::TOK_SEMICOLON);
     }
+    else throw SyntaxException(SyntaxError::UNKNOWN_CREATE_KEYWORD, current.getLine(), current.getColumn(), current.getLexeme(), "");
 }
 
 void Parser::parseDrop(DatabaseManager& manager) {
@@ -326,6 +343,7 @@ void Parser::parseDrop(DatabaseManager& manager) {
 
         db->dropTable(tableName);
     }
+    else throw SyntaxException(SyntaxError::UNKNOWN_DROP_KEYWORD, current.getLine(), current.getColumn(), current.getLexeme(), "");
 }
 
 void Parser::parseUse(DatabaseManager& manager) {
@@ -350,6 +368,7 @@ void Parser::parseShow(DatabaseManager& manager) {
     else if(match(TokenType::TOK_COLUMNS)) {
         parseShowColumns(manager);
     }
+    else throw SyntaxException(SyntaxError::UNKNOWN_SHOW_KEYWORD, current.getLine(), current.getColumn(), current.getLexeme(), "");
 }
 
 void Parser::parseShowTables(DatabaseManager& manager) {
@@ -458,8 +477,11 @@ void Parser::parseOrderBy(Table* table, std::vector<int> whereRows) {
         throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), colName, table->getName());
     }
 
-    TokenType order = current.getType();
-    if(match(TokenType::TOK_ASC) || match(TokenType::TOK_DESC)) consume(order);
+    TokenType order = TokenType::TOK_ASC;
+    if(match(TokenType::TOK_ASC) || match(TokenType::TOK_DESC)) {
+        order = current.getType();
+        consume(order);
+    }
 
     std::vector<int> sortedRows;
     if (!whereRows.empty()) sortedRows = whereRows;

@@ -12,8 +12,8 @@ private :
     Token current;
 
     void advance();
-    bool consume(TokenType expected);
     bool match(TokenType type);
+    void consume(TokenType expected);
 
     void parseUse(DatabaseManager& manager);
     void parseCreate(DatabaseManager& manager);

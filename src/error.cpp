@@ -285,6 +285,36 @@ const char* RuntimeException::what() const noexcept {
             m_message += DIVIDER;
             break;
         }
+        case RuntimeError::TABLE_ALREADY_EXISTS : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: Table already exists\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: Table '" + errorLexeme + "' already exists in database '" + correctLexeme + "' either in memory or on disk.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
+        case RuntimeError::DUPLICATE_COLUMN_NAME: {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: Duplicate column name\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: Column '" + errorLexeme + "' already exists in table '" + correctLexeme + "'.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
+        case RuntimeError::NO_DATABASE_SELECTED : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: No database selected\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: No database is currently selected. Use 'USE <database_name>' before running '" + errorLexeme + "'.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
         default: {
             m_message  = "\n";
             m_message += DIVIDER;

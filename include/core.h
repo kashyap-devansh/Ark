@@ -160,7 +160,7 @@ public :
     std::string getName();
     Table* getTable(const std::string& tableName);
 
-    void createTable(const std::string& tableName);
+    bool createTable(const std::string& tableName);
     void dropTable(const std::string& tableName);
 
     std::vector<std::string> listTables() const;
