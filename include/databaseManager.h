@@ -11,6 +11,8 @@ private :
     bool hasActiveDatabase;
     std::vector<std::string> dbNames;
 
+    void saveRegistry();
+
 public :
     DatabaseManager();
 

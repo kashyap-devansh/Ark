@@ -1,0 +1,235 @@
+-- ============================================================
+--  Ark SQL — Demo Operations
+--
+--  NOTE:
+--  This script assumes the following databases are already
+--  created and saved in the ./databases/ folder by running
+--  the setup script (setup.ark) beforehand:
+--
+--    - school   (tables: students, courses, enrollments)
+--    - shop     (tables: products, customers, orders)
+--    - library  (tables: books, members, loans)
+--
+--  These are a few example operations to demonstrate the
+--  capabilities of the Ark SQL engine including:
+--  SELECT, WHERE, AND/OR, LIKE, ORDER BY, UPDATE, DELETE.
+--
+--  To run:
+--    ./file.exe operations.ark
+-- ============================================================
+
+
+-- ============================================================
+--  OPERATIONS ON DATABASE 1 : school
+-- ============================================================
+
+USE school;
+LOAD;
+
+-- Show all tables and columns
+SHOW TABLES;
+SHOW COLUMNS FROM students;
+SHOW COLUMNS FROM courses;
+SHOW COLUMNS FROM enrollments;
+
+-- Select all data
+SELECT * FROM students;
+SELECT * FROM courses;
+SELECT * FROM enrollments;
+
+-- Select specific columns
+SELECT name, grade FROM students;
+SELECT title, fee FROM courses;
+
+-- Where conditions
+SELECT * FROM students WHERE grade > 3.5;
+SELECT * FROM students WHERE age < 21;
+SELECT * FROM students WHERE active == FALSE;
+SELECT * FROM courses WHERE credits == 4;
+SELECT * FROM courses WHERE fee < 250.0;
+SELECT * FROM enrollments WHERE passed == FALSE;
+
+-- AND / OR conditions
+SELECT * FROM students WHERE grade > 3.0 AND active == TRUE;
+SELECT * FROM students WHERE age == 20 AND active == TRUE;
+SELECT * FROM students WHERE grade < 2.0 OR active == FALSE;
+SELECT * FROM students WHERE age > 21 OR grade > 3.8;
+
+-- LIKE
+SELECT * FROM students WHERE name LIKE "A%";
+SELECT * FROM students WHERE name LIKE "%e%";
+SELECT * FROM courses WHERE title LIKE "P%";
+SELECT * FROM courses WHERE title LIKE "%s%";
+
+-- ORDER BY
+SELECT * FROM students ORDER BY grade ASC;
+SELECT * FROM students ORDER BY grade DESC;
+SELECT * FROM students ORDER BY age ASC;
+SELECT * FROM courses ORDER BY fee DESC;
+SELECT * FROM courses ORDER BY credits ASC;
+
+-- Update
+UPDATE students SET grade = 3.5 WHERE name == "Bob";
+UPDATE students SET active = TRUE WHERE name == "Ethan";
+UPDATE students SET age = 24 WHERE name == "Charlie";
+UPDATE courses SET fee = 259.99 WHERE course_id == 104;
+UPDATE courses SET fee = 239.99 WHERE course_id == 105;
+UPDATE enrollments SET passed = TRUE WHERE student_id == 2;
+
+-- Verify updates
+SELECT * FROM students WHERE name == "Bob";
+SELECT * FROM students WHERE name == "Ethan";
+SELECT * FROM courses WHERE course_id == 104;
+SELECT * FROM enrollments WHERE student_id == 2;
+
+-- Delete
+DELETE FROM enrollments WHERE passed == FALSE LIMIT 1;
+SELECT * FROM enrollments;
+
+DELETE FROM students WHERE grade < 2.0;
+SELECT * FROM students;
+
+SAVE;
+
+
+-- ============================================================
+--  OPERATIONS ON DATABASE 2 : shop
+-- ============================================================
+
+USE shop;
+LOAD;
+
+-- Show all tables and columns
+SHOW TABLES;
+SHOW COLUMNS FROM products;
+SHOW COLUMNS FROM customers;
+SHOW COLUMNS FROM orders;
+
+-- Select all data
+SELECT * FROM products;
+SELECT * FROM customers;
+SELECT * FROM orders;
+
+-- Select specific columns
+SELECT name, price FROM products;
+SELECT name, premium FROM customers;
+
+-- Where conditions
+SELECT * FROM products WHERE price > 100.0;
+SELECT * FROM products WHERE stock < 100;
+SELECT * FROM products WHERE available == FALSE;
+SELECT * FROM customers WHERE premium == TRUE;
+SELECT * FROM customers WHERE age > 30;
+SELECT * FROM orders WHERE fulfilled == FALSE;
+
+-- AND / OR conditions
+SELECT * FROM products WHERE price < 100.0 AND available == TRUE;
+SELECT * FROM products WHERE stock > 100 AND available == TRUE;
+SELECT * FROM customers WHERE premium == TRUE AND age < 30;
+SELECT * FROM orders WHERE fulfilled == FALSE OR quantity > 3;
+
+-- LIKE
+SELECT * FROM products WHERE name LIKE "L%";
+SELECT * FROM products WHERE name LIKE "%e%";
+SELECT * FROM customers WHERE name LIKE "A%";
+SELECT * FROM customers WHERE name LIKE "%a%";
+
+-- ORDER BY
+SELECT * FROM products ORDER BY price ASC;
+SELECT * FROM products ORDER BY price DESC;
+SELECT * FROM products ORDER BY stock DESC;
+SELECT * FROM customers ORDER BY age ASC;
+SELECT * FROM orders ORDER BY quantity DESC;
+
+-- Update
+UPDATE products SET price = 899.99 WHERE product_id == 1;
+UPDATE products SET available = TRUE WHERE product_id == 7;
+UPDATE products SET stock = 75 WHERE product_id == 4;
+UPDATE customers SET premium = TRUE WHERE name == "Bob";
+UPDATE customers SET premium = TRUE WHERE name == "David";
+UPDATE orders SET fulfilled = TRUE WHERE order_id == 1003;
+
+-- Verify updates
+SELECT * FROM products WHERE product_id == 1;
+SELECT * FROM products WHERE product_id == 7;
+SELECT * FROM customers WHERE name == "Bob";
+SELECT * FROM orders WHERE order_id == 1003;
+
+-- Delete
+DELETE FROM orders WHERE fulfilled == FALSE LIMIT 1;
+SELECT * FROM orders;
+
+DELETE FROM products WHERE available == FALSE;
+SELECT * FROM products;
+
+SAVE;
+
+
+-- ============================================================
+--  OPERATIONS ON DATABASE 3 : library
+-- ============================================================
+
+USE library;
+LOAD;
+
+-- Show all tables and columns
+SHOW TABLES;
+SHOW COLUMNS FROM books;
+SHOW COLUMNS FROM members;
+SHOW COLUMNS FROM loans;
+
+-- Select all data
+SELECT * FROM books;
+SELECT * FROM members;
+SELECT * FROM loans;
+
+-- Select specific columns
+SELECT title, author FROM books;
+SELECT title, year FROM books;
+SELECT name, active FROM members;
+
+-- Where conditions
+SELECT * FROM books WHERE available == TRUE;
+SELECT * FROM books WHERE year > 2000;
+SELECT * FROM books WHERE pages > 400;
+SELECT * FROM members WHERE active == TRUE;
+SELECT * FROM members WHERE age > 25;
+SELECT * FROM loans WHERE returned == FALSE;
+
+-- AND / OR conditions
+SELECT * FROM books WHERE available == TRUE AND pages < 500;
+SELECT * FROM books WHERE year > 2000 AND available == TRUE;
+SELECT * FROM members WHERE active == TRUE AND age < 30;
+SELECT * FROM loans WHERE returned == FALSE OR loan_id == 2;
+
+-- LIKE
+SELECT * FROM books WHERE title LIKE "C%";
+SELECT * FROM books WHERE title LIKE "%e%";
+SELECT * FROM books WHERE author LIKE "%Martin%";
+SELECT * FROM members WHERE name LIKE "A%";
+
+-- ORDER BY
+SELECT * FROM books ORDER BY year ASC;
+SELECT * FROM books ORDER BY pages DESC;
+SELECT * FROM members ORDER BY age ASC;
+SELECT * FROM loans ORDER BY loan_id ASC;
+
+-- Update
+UPDATE books SET available = TRUE WHERE book_id == 3;
+UPDATE books SET available = TRUE WHERE book_id == 6;
+UPDATE members SET active = TRUE WHERE name == "Carol";
+UPDATE loans SET returned = TRUE WHERE member_id == 4;
+
+-- Verify updates
+SELECT * FROM books WHERE book_id == 3;
+SELECT * FROM members WHERE name == "Carol";
+SELECT * FROM loans WHERE member_id == 4;
+
+-- Delete
+DELETE FROM loans WHERE returned == TRUE LIMIT 2;
+SELECT * FROM loans;
+
+DELETE FROM members WHERE active == FALSE;
+SELECT * FROM members;
+
+SAVE;
