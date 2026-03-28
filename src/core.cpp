@@ -48,18 +48,26 @@ DataType Cell::getType() const {
 }
 
 int Cell::getInt() const {
+    if(isNull) return 0;
+
     return value.Int;
 }
 
 double Cell::getDouble() const {
+    if(isNull) return 0.0;
+
     return value.Double;
 }
 
 std::string Cell::getString() const {
+    if(isNull) return "";
+
     return stringValue;
 }
 
 bool Cell::getBool() const {
+    if(isNull) return false;
+
     return value.Bool;
 }
 
@@ -81,27 +89,38 @@ bool Cell::isBool() const {
 
 void Cell::setInt(int value) {
     this->value.Int = value;
+    isNull = false;
+    type = DataType::INT;
 }
 
 void Cell::setDouble(double value) {
     this->value.Double = value;
+    isNull = false;
+    type = DataType::DOUBLE;
 }
 
 void Cell::setString(const std::string& value) {
     stringValue = value;
+    isNull = false;
+    type = DataType::STRING;
 }
 
 void Cell::setBool(bool value) {
     this->value.Bool = value;
+    isNull = false;
+    type = DataType::BOOL;
 }
 
 void Cell::setNull() {
     isNull = true;
+    type = DataType::NONE;
     value.Double = 0.0;
     stringValue = "";
 }
 
 std::string Cell::toString() const {
+    if(isNull) return "NULL";
+
     switch(type) {
         case DataType::INT :
             return std::to_string(value.Int);
@@ -117,6 +136,8 @@ std::string Cell::toString() const {
 }
 
 bool Cell::operator==(const Cell& other) const {
+    if(isNull || other.isNull) return false;
+
     if(type != other.type) {
         return false;
     }
@@ -140,6 +161,8 @@ bool Cell::operator!=(const Cell& other) const {
 }
 
 bool Cell::operator<(const Cell& other) const {
+    if(isNull || other.isNull) return false;
+
     if(type != other.type) {
         return (type < other.type);
     }

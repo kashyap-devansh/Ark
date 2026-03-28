@@ -1,7 +1,6 @@
 #include "parser.h"
 #include "helper.h"
 #include "error.h"
-using namespace std;
 
 #include <iostream>
 
@@ -111,7 +110,6 @@ std::vector<int> Parser::parseLikeMatches(Table* table, int colIndex) {
     }
 
     std::string wordLike = current.getLexeme();
-    std::cout << "DEBUG wordLike: [" << wordLike << "]\n";
     consume(TokenType::TOK_STRING);
 
     std::vector<int> result;
