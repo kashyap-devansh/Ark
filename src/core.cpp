@@ -359,6 +359,8 @@ bool Table::loadStructureFromFile() {
             type = DataType::STRING;
         else if(typeStr == "BOOL") 
             type = DataType::BOOL;
+        else if(typeStr == "NULL")
+            type = DataType::NONE;
         else {
             std::cerr << "Unknown data type: " << typeStr << '\n';
             return false;
@@ -381,7 +383,10 @@ bool Table::saveDataToFile() const {
 
     for(const auto& row : rows) {
         for(size_t i = 0; i < row.getCellCount(); i++) {
-            fout << row.getCell(i).toString();
+            Cell cell = row.getCell(i);
+            
+            if(cell.isString()) fout << "\"" << cell.getString() << "\"";
+            else fout << cell.toString();
 
             if(i != row.getCellCount() - 1) fout << ",";
         }
@@ -415,6 +420,12 @@ bool Table::loadDataFromFile() {
         while(std::getline(ss, value, ',') && columnIndex < columns.size()) {
             DataType type = columns[columnIndex].getType();
 
+            if(value == "NULL") {
+                row.addCell(Cell());
+                columnIndex++;
+                continue;
+            }
+
             switch(type) {
                 case DataType::INT : {
                     int intVal = std::stoi(value);
@@ -427,6 +438,7 @@ bool Table::loadDataFromFile() {
                     break;
                 }
                 case DataType::STRING : {
+                    if(value.size() >= 2 && value[0] == '\"' && value[value.size() - 1] == '\"') value = value.substr(1, value.size() - 2);
                     row.addCell(Cell(value));
                     break;
                 }
