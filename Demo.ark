@@ -1,235 +1,250 @@
 -- ============================================================
---  Ark SQL — Demo Operations
---
---  NOTE:
---  This script assumes the following databases are already
---  created and saved in the ./databases/ folder by running
---  the setup script (setup.ark) beforehand:
---
---    - school   (tables: students, courses, enrollments)
---    - shop     (tables: products, customers, orders)
---    - library  (tables: books, members, loans)
---
---  These are a few example operations to demonstrate the
---  capabilities of the Ark SQL engine including:
---  SELECT, WHERE, AND/OR, LIKE, ORDER BY, UPDATE, DELETE.
---
---  To run:
---    ./file.exe operations.ark
+--   ARK DATABASE ENGINE - DEMO FILE
+--   Project Demo for Professor
+--   Shows: Multiple Databases, All Data Types, All Commands
 -- ============================================================
 
 
 -- ============================================================
---  OPERATIONS ON DATABASE 1 : school
+--   SECTION 1 : SHOW ALL DATABASES (starts empty)
+-- ============================================================
+
+SHOW DATABASES;
+
+
+-- ============================================================
+--   SECTION 2 : CREATE TWO DATABASES
+-- ============================================================
+
+CREATE DATABASE school;
+CREATE DATABASE store;
+
+SHOW DATABASES;
+
+
+-- ============================================================
+--   SECTION 3 : SCHOOL DATABASE DEMO
 -- ============================================================
 
 USE school;
-LOAD;
 
--- Show all tables and columns
+-- Create students table (INT, STRING, DOUBLE, BOOL all in one)
+CREATE TABLE students (
+    id      INT,
+    name    STRING,
+    gpa     DOUBLE,
+    active  BOOL
+);
+
+-- Create courses table
+CREATE TABLE courses (
+    course_id   INT,
+    title       STRING,
+    credits     INT,
+    is_elective BOOL
+);
+
+-- Show all tables in school database
 SHOW TABLES;
+
+-- Show columns of students table
 SHOW COLUMNS FROM students;
-SHOW COLUMNS FROM courses;
-SHOW COLUMNS FROM enrollments;
 
--- Select all data
+-- Insert multiple rows in one statement
+INSERT INTO students VALUES
+    (1, "Devansh",  9.2, TRUE),
+    (2, "Rohan",    8.7, TRUE),
+    (3, "Priya",    9.5, TRUE),
+    (4, "Arjun",    7.1, FALSE),
+    (5, "Sneha",    8.3, TRUE),
+    (6, "Vikram",   6.9, FALSE);
+
+INSERT INTO courses VALUES
+    (101, "Data Structures",    4, FALSE),
+    (102, "Database Systems",   3, FALSE),
+    (103, "Web Development",    3, TRUE),
+    (104, "Machine Learning",   4, TRUE),
+    (105, "Operating Systems",  4, FALSE);
+
+-- SELECT all students
 SELECT * FROM students;
+
+-- SELECT all courses
 SELECT * FROM courses;
-SELECT * FROM enrollments;
 
--- Select specific columns
-SELECT name, grade FROM students;
-SELECT title, fee FROM courses;
+-- SELECT specific columns only
+SELECT name, gpa FROM students;
 
--- Where conditions
-SELECT * FROM students WHERE grade > 3.5;
-SELECT * FROM students WHERE age < 21;
-SELECT * FROM students WHERE active == FALSE;
-SELECT * FROM courses WHERE credits == 4;
-SELECT * FROM courses WHERE fee < 250.0;
-SELECT * FROM enrollments WHERE passed == FALSE;
+-- WHERE : single condition
+SELECT * FROM students WHERE active == TRUE;
 
--- AND / OR conditions
-SELECT * FROM students WHERE grade > 3.0 AND active == TRUE;
-SELECT * FROM students WHERE age == 20 AND active == TRUE;
-SELECT * FROM students WHERE grade < 2.0 OR active == FALSE;
-SELECT * FROM students WHERE age > 21 OR grade > 3.8;
+-- WHERE : comparison operator
+SELECT * FROM students WHERE gpa > 8.5;
 
--- LIKE
-SELECT * FROM students WHERE name LIKE "A%";
-SELECT * FROM students WHERE name LIKE "%e%";
-SELECT * FROM courses WHERE title LIKE "P%";
-SELECT * FROM courses WHERE title LIKE "%s%";
+-- WHERE : AND condition
+SELECT * FROM students WHERE gpa >= 8.0 AND active == TRUE;
 
--- ORDER BY
-SELECT * FROM students ORDER BY grade ASC;
-SELECT * FROM students ORDER BY grade DESC;
-SELECT * FROM students ORDER BY age ASC;
-SELECT * FROM courses ORDER BY fee DESC;
-SELECT * FROM courses ORDER BY credits ASC;
+-- WHERE : OR condition
+SELECT * FROM students WHERE gpa < 7.5 OR active == FALSE;
 
--- Update
-UPDATE students SET grade = 3.5 WHERE name == "Bob";
-UPDATE students SET active = TRUE WHERE name == "Ethan";
-UPDATE students SET age = 24 WHERE name == "Charlie";
-UPDATE courses SET fee = 259.99 WHERE course_id == 104;
-UPDATE courses SET fee = 239.99 WHERE course_id == 105;
-UPDATE enrollments SET passed = TRUE WHERE student_id == 2;
+-- ORDER BY : sort students by GPA ascending
+SELECT * FROM students ORDER BY gpa ASC;
 
--- Verify updates
-SELECT * FROM students WHERE name == "Bob";
-SELECT * FROM students WHERE name == "Ethan";
-SELECT * FROM courses WHERE course_id == 104;
-SELECT * FROM enrollments WHERE student_id == 2;
+-- ORDER BY : sort students by GPA descending
+SELECT * FROM students ORDER BY gpa DESC;
 
--- Delete
-DELETE FROM enrollments WHERE passed == FALSE LIMIT 1;
-SELECT * FROM enrollments;
+-- LIKE : find students whose name starts with D
+SELECT * FROM students WHERE name LIKE "D%";
 
-DELETE FROM students WHERE grade < 2.0;
+-- LIKE : find students whose name contains "an"
+SELECT * FROM students WHERE name LIKE "%an%";
+
+-- UPDATE : update a single student's GPA with WHERE
+UPDATE students SET gpa = 7.8 WHERE name LIKE "%jun%";
+
+-- UPDATE : update multiple columns at once with WHERE
+UPDATE students SET gpa = 9.8, active = TRUE WHERE id == 4;
+
+-- Confirm the update
+SELECT * FROM students WHERE id == 4;
+
+-- DELETE with WHERE + LIMIT (delete only 1 inactive student)
+DELETE FROM students WHERE active == FALSE LIMIT 1;
+
+-- Confirm delete
 SELECT * FROM students;
 
+-- Save school database to disk
 SAVE;
 
 
 -- ============================================================
---  OPERATIONS ON DATABASE 2 : shop
+--   SECTION 4 : STORE DATABASE DEMO
 -- ============================================================
 
-USE shop;
-LOAD;
+USE store;
 
--- Show all tables and columns
+-- Create products table
+CREATE TABLE products (
+    product_id  INT,
+    name        STRING,
+    price       DOUBLE,
+    in_stock    BOOL
+);
+
+-- Create orders table
+CREATE TABLE orders (
+    order_id    INT,
+    product_id  INT,
+    quantity    INT,
+    total       DOUBLE
+);
+
 SHOW TABLES;
 SHOW COLUMNS FROM products;
-SHOW COLUMNS FROM customers;
-SHOW COLUMNS FROM orders;
 
--- Select all data
+INSERT INTO products VALUES
+    (1, "Laptop",       55000.99, TRUE),
+    (2, "Mouse",        799.50,   TRUE),
+    (3, "Keyboard",     1299.00,  TRUE),
+    (4, "Monitor",      18000.00, FALSE),
+    (5, "Headphones",   3499.00,  TRUE),
+    (6, "Webcam",       2199.50,  FALSE);
+
+INSERT INTO orders VALUES
+    (1001, 1, 2, 110001.98),
+    (1002, 2, 5, 3997.50),
+    (1003, 3, 3, 3897.00),
+    (1004, 5, 1, 3499.00),
+    (1005, 1, 1, 55000.99);
+
+-- Show all products
 SELECT * FROM products;
-SELECT * FROM customers;
-SELECT * FROM orders;
 
--- Select specific columns
-SELECT name, price FROM products;
-SELECT name, premium FROM customers;
+-- Show only in-stock products
+SELECT * FROM products WHERE in_stock == TRUE;
 
--- Where conditions
-SELECT * FROM products WHERE price > 100.0;
-SELECT * FROM products WHERE stock < 100;
-SELECT * FROM products WHERE available == FALSE;
-SELECT * FROM customers WHERE premium == TRUE;
-SELECT * FROM customers WHERE age > 30;
-SELECT * FROM orders WHERE fulfilled == FALSE;
+-- Show expensive products (price > 5000)
+SELECT name, price FROM products WHERE price > 5000.0;
 
--- AND / OR conditions
-SELECT * FROM products WHERE price < 100.0 AND available == TRUE;
-SELECT * FROM products WHERE stock > 100 AND available == TRUE;
-SELECT * FROM customers WHERE premium == TRUE AND age < 30;
-SELECT * FROM orders WHERE fulfilled == FALSE OR quantity > 3;
-
--- LIKE
-SELECT * FROM products WHERE name LIKE "L%";
-SELECT * FROM products WHERE name LIKE "%e%";
-SELECT * FROM customers WHERE name LIKE "A%";
-SELECT * FROM customers WHERE name LIKE "%a%";
-
--- ORDER BY
+-- Show products sorted by price ascending
 SELECT * FROM products ORDER BY price ASC;
+
+-- Show products sorted by price descending
 SELECT * FROM products ORDER BY price DESC;
-SELECT * FROM products ORDER BY stock DESC;
-SELECT * FROM customers ORDER BY age ASC;
-SELECT * FROM orders ORDER BY quantity DESC;
 
--- Update
-UPDATE products SET price = 899.99 WHERE product_id == 1;
-UPDATE products SET available = TRUE WHERE product_id == 7;
-UPDATE products SET stock = 75 WHERE product_id == 4;
-UPDATE customers SET premium = TRUE WHERE name == "Bob";
-UPDATE customers SET premium = TRUE WHERE name == "David";
-UPDATE orders SET fulfilled = TRUE WHERE order_id == 1003;
+-- LIKE : products whose name ends with specific letter
+SELECT * FROM products WHERE name LIKE "%p";
 
--- Verify updates
-SELECT * FROM products WHERE product_id == 1;
-SELECT * FROM products WHERE product_id == 7;
-SELECT * FROM customers WHERE name == "Bob";
-SELECT * FROM orders WHERE order_id == 1003;
+-- UPDATE : a product that went out of stock
+UPDATE products SET in_stock = FALSE WHERE product_id == 3;
 
--- Delete
-DELETE FROM orders WHERE fulfilled == FALSE LIMIT 1;
-SELECT * FROM orders;
+-- UPDATE : price change with AND condition
+UPDATE products SET price = 17500.00 WHERE product_id == 4 AND in_stock == FALSE;
 
-DELETE FROM products WHERE available == FALSE;
+-- Verify the updates
 SELECT * FROM products;
 
+-- Show all orders
+SELECT * FROM orders;
+
+-- Orders with total over 10000
+SELECT * FROM orders WHERE total > 10000.0;
+
+-- Delete orders for a product
+DELETE FROM orders WHERE product_id == 2;
+
+-- Confirm deletion
+SELECT * FROM orders;
+
+-- Save store database to disk
 SAVE;
 
 
 -- ============================================================
---  OPERATIONS ON DATABASE 3 : library
+--   SECTION 5 : DEMONSTRATE SAVE AND LOAD
 -- ============================================================
 
-USE library;
+-- Switch back to school and load from disk
+USE school;
 LOAD;
 
--- Show all tables and columns
+-- Verify data was saved and loaded correctly
+SELECT * FROM students;
+SELECT * FROM courses;
+
+-- Switch to store and load from disk
+USE store;
+LOAD;
+
+SELECT * FROM products;
+
+
+-- ============================================================
+--   SECTION 6 : DROP TABLE AND DATABASE DEMO
+-- ============================================================
+
+-- Drop a table from store database
+DROP TABLE orders;
+
+-- Confirm it's gone
 SHOW TABLES;
-SHOW COLUMNS FROM books;
-SHOW COLUMNS FROM members;
-SHOW COLUMNS FROM loans;
 
--- Select all data
-SELECT * FROM books;
-SELECT * FROM members;
-SELECT * FROM loans;
+-- Go back to school database
+USE school;
 
--- Select specific columns
-SELECT title, author FROM books;
-SELECT title, year FROM books;
-SELECT name, active FROM members;
+-- Drop courses table
+DROP TABLE courses;
 
--- Where conditions
-SELECT * FROM books WHERE available == TRUE;
-SELECT * FROM books WHERE year > 2000;
-SELECT * FROM books WHERE pages > 400;
-SELECT * FROM members WHERE active == TRUE;
-SELECT * FROM members WHERE age > 25;
-SELECT * FROM loans WHERE returned == FALSE;
+SHOW TABLES;
 
--- AND / OR conditions
-SELECT * FROM books WHERE available == TRUE AND pages < 500;
-SELECT * FROM books WHERE year > 2000 AND available == TRUE;
-SELECT * FROM members WHERE active == TRUE AND age < 30;
-SELECT * FROM loans WHERE returned == FALSE OR loan_id == 2;
+-- Drop the entire store database
+DROP DATABASE store;
 
--- LIKE
-SELECT * FROM books WHERE title LIKE "C%";
-SELECT * FROM books WHERE title LIKE "%e%";
-SELECT * FROM books WHERE author LIKE "%Martin%";
-SELECT * FROM members WHERE name LIKE "A%";
+-- Confirm only school is left
+SHOW DATABASES;
 
--- ORDER BY
-SELECT * FROM books ORDER BY year ASC;
-SELECT * FROM books ORDER BY pages DESC;
-SELECT * FROM members ORDER BY age ASC;
-SELECT * FROM loans ORDER BY loan_id ASC;
 
--- Update
-UPDATE books SET available = TRUE WHERE book_id == 3;
-UPDATE books SET available = TRUE WHERE book_id == 6;
-UPDATE members SET active = TRUE WHERE name == "Carol";
-UPDATE loans SET returned = TRUE WHERE member_id == 4;
-
--- Verify updates
-SELECT * FROM books WHERE book_id == 3;
-SELECT * FROM members WHERE name == "Carol";
-SELECT * FROM loans WHERE member_id == 4;
-
--- Delete
-DELETE FROM loans WHERE returned == TRUE LIMIT 2;
-SELECT * FROM loans;
-
-DELETE FROM members WHERE active == FALSE;
-SELECT * FROM members;
-
-SAVE;
+-- ============================================================
+--   END OF DEMO
+-- ============================================================
