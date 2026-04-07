@@ -29,6 +29,8 @@ enum class TypeError {
 };
 
 enum class RuntimeError {
+    FILE_NOT_PROVIDED,
+    FILE_NOT_FOUND,
     COLUMN_NOT_FOUND,
     INSERT_TYPE_MISMATCH,
     TABLE_NOT_FOUND,

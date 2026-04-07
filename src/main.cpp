@@ -6,18 +6,29 @@
 #include "error.h"
 
 int main(int argc, char* argv[]) {
-    if(argc < 2) {
-        std::cerr << "Usage: ./file.exe code.ark\n";
+    try {
+        if(argc < 2) {
+            throw RuntimeException(RuntimeError::FILE_NOT_PROVIDED, 0, 0, "", "");
+        }
+    }
+    catch(const ArkException& e) {
+        std::cerr << e.what();
+        return 1;
+    }
+
+    std::ifstream file(argv[1]);
+    try {
+        if(!file) {
+            throw RuntimeException(RuntimeError::FILE_NOT_FOUND, 0, 0, argv[1], "");
+        } 
+    }
+    catch(const ArkException& e) {
+        std::cerr << e.what();
+
         return 1;
     }
 
     DatabaseManager manager;
-
-    std::ifstream file(argv[1]);
-    if(!file) {
-        std::cerr << "failed to open " << argv[1] << "\n";
-        return 1;
-    }
 
     std::string command;
     char ch;

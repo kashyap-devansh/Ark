@@ -28,6 +28,8 @@ namespace detail {
 
     const char* toString(RuntimeError code) {
         switch(code) {
+            case RuntimeError::FILE_NOT_PROVIDED : return "FILE_NOT_PROVIDED";
+            case RuntimeError::FILE_NOT_FOUND : return "FILE_NOT_FOUND";
             case RuntimeError::COLUMN_NOT_FOUND : return "COLUMN_NOT_FOUND";
             case RuntimeError::TABLE_NOT_FOUND : return "TABLE_NOT_FOUND";
             case RuntimeError::NO_DATABASES : return "NO_DATABASES";
@@ -226,6 +228,26 @@ const char* RuntimeException::what() const noexcept {
     std::string location = "LINE: " + std::to_string(lineNumber) + ", COLUMN: " + std::to_string(columnNumber) + "\n";
 
     switch(code) {
+        case RuntimeError::FILE_NOT_PROVIDED : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: No input file provided\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: No input file specified. Usage: ./file.exe <filename>.ark\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
+        case RuntimeError::FILE_NOT_FOUND : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: File not found\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: Failed to open file '" + errorLexeme + "'. Ensure the file exists and path is correct.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
         case RuntimeError::COLUMN_NOT_FOUND : {
             m_message  = "\n";
             m_message += DIVIDER;
