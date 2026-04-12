@@ -461,7 +461,7 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     printBorder(widths, columnIndexes);
 }
 
-void Parser::parseOrderBy(Table* table, std::vector<int> whereRows) {
+void Parser::parseOrderBy(Table* table, std::vector<int> whereRows, std::vector<int> columnIndexes, std::vector<std::string> aliasNames) {
     consume(TokenType::TOK_BY);
 
     std::vector<Row> rows = table->selectAll();
@@ -471,9 +471,7 @@ void Parser::parseOrderBy(Table* table, std::vector<int> whereRows) {
 
     int colNumber = getColumnIndex(table, colName);
 
-    if(colNumber == -1) {
-        throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), colName, table->getName());
-    }
+    if(colNumber == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), colName, table->getName());
 
     TokenType order = TokenType::TOK_ASC;
     if(match(TokenType::TOK_ASC) || match(TokenType::TOK_DESC)) {
@@ -482,11 +480,9 @@ void Parser::parseOrderBy(Table* table, std::vector<int> whereRows) {
     }
 
     std::vector<int> sortedRows;
-    if (!whereRows.empty()) sortedRows = whereRows;
+    if(!whereRows.empty()) sortedRows = whereRows;
     else {
-        for (int i = 0; i < (int)rows.size(); i++) {
-            sortedRows.push_back(i);
-        }
+        for (int i = 0; i < (int)rows.size(); i++) sortedRows.push_back(i);
     }
 
     for(int i = 0; i < (int)sortedRows.size() - 1; i++) {
@@ -512,10 +508,11 @@ void Parser::parseOrderBy(Table* table, std::vector<int> whereRows) {
         if(!swapped) break;
     }
 
-    std::vector<int> columnIndexes;
-    for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
+    if(columnIndexes.empty()) {
+        for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
+    }
 
-    printTableResult(table, columnIndexes, sortedRows);
+    printTableResult(table, columnIndexes, sortedRows, aliasNames);
 
     consume(TokenType::TOK_SEMICOLON);
 }
@@ -568,6 +565,9 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
     std::vector<std::string> selectedColumns;
     bool selectAll = false;
+    
+    std::vector<std::string> aliasColumnNames;
+    bool alias = false;
 
     if(match(TokenType::TOK_STAR)) {
         consume(TokenType::TOK_STAR);
@@ -578,6 +578,15 @@ void Parser::parseSelect(DatabaseManager& manager) {
             std::string colName = current.getLexeme();
             consume(TokenType::TOK_IDENTIFIER);
             selectedColumns.push_back(colName);
+
+            if(match(TokenType::TOK_AS)) {
+                consume(TokenType::TOK_AS);
+                alias = true;
+
+                std::string aliasName = current.getLexeme();
+                consume(TokenType::TOK_IDENTIFIER);
+                aliasColumnNames.push_back(aliasName);
+            }
 
             if(match(TokenType::TOK_COMMA)) consume(TokenType::TOK_COMMA);
             else break;
@@ -596,14 +605,20 @@ void Parser::parseSelect(DatabaseManager& manager) {
     checkNotNull(table, tableName);
 
     std::vector<int> whereRows;
-    if(match(TokenType::TOK_WHERE)) {
-        whereRows = parseWhereClause(table);
-    }
+    if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
 
     if(match(TokenType::TOK_ORDER)) {
         consume(TokenType::TOK_ORDER);
 
-        if(match(TokenType::TOK_BY)) parseOrderBy(table, whereRows);
+        std::vector<int> columnIndexes;
+        if(selectAll) for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
+        else {
+            for(const std::string& colName : selectedColumns) {
+                columnIndexes.push_back(getColumnIndex(table, colName));
+            }
+        }
+
+        if(match(TokenType::TOK_BY)) parseOrderBy(table, whereRows, columnIndexes, aliasColumnNames);
         return;
     }
     
@@ -611,9 +626,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
 
     std::vector<int> columnIndexes;
 
-    if(selectAll) {
-        for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
-    }
+    if(selectAll) for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
     else {
         for(const std::string& colName : selectedColumns) {
 
@@ -627,7 +640,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
         } 
     }
 
-    printTableResult(table, columnIndexes, whereRows);
+    printTableResult(table, columnIndexes, whereRows, alias ? aliasColumnNames : std::vector<std::string>{});
 }
 
 void Parser::parseUpdate(DatabaseManager& manager) {

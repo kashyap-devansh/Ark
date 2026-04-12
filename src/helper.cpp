@@ -122,9 +122,14 @@ bool evaluateLogicalConditions(const Row* row, const std::vector<Condition>& con
     return result;
 }
 
-std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndexes) {
+std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndexes, const std::vector<std::string>& aliasNames) {
     std::vector<int> widths;
-    for(int i = 0; i < colIndexes.size(); i++) widths.push_back(table->getColumName(colIndexes.at(i)).length());
+
+    for(int i = 0; i < colIndexes.size(); i++) {
+        std::string headerName = (i < aliasNames.size() && !aliasNames[i].empty()) ? aliasNames[i] : table->getColumName(colIndexes[i]);
+
+        widths.push_back(headerName.length());
+    }
 
     for(const Row& row : table->selectAll()) {
         for(int i = 0; i < colIndexes.size(); i++) {
@@ -137,14 +142,14 @@ std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndex
     return widths;
 }
 
-void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes) {
-    std::vector<int> widths = computeColWidths(table, colIndexes);
+void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes, const std::vector<std::string>& aliasNames) {
+    std::vector<int> widths = computeColWidths(table, colIndexes, aliasNames);
 
     printBorder(widths, colIndexes);
 
     std::cout << "|";
     for(int i = 0; i < colIndexes.size(); i++) {
-        std::string colName = table->getColumName(colIndexes[i]);
+        std::string colName = (i < aliasNames.size() && !aliasNames[i].empty()) ? aliasNames[i] : table->getColumName(colIndexes[i]);
         std::cout << " " << colName;
 
         for(int j = colName.length(); j < widths[i]; j++) std::cout << " ";

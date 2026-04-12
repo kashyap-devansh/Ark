@@ -1,52 +1,51 @@
 #include "tokenizer.h"
-#include <vector>
+#include <unordered_map>
 #include <cctype>
 
-static const std::vector<Keyword> KeywordTable = {
-    {"CREATE",   TokenType::TOK_CREATE},
-    {"DROP",     TokenType::TOK_DROP},
-    {"SHOW",     TokenType::TOK_SHOW},
-    {"SAVE",     TokenType::TOK_SAVE},
-    {"LOAD",     TokenType::TOK_LOAD},
-    {"TABLE",    TokenType::TOK_TABLE},
-    {"TABLES",   TokenType::TOK_TABLES},
-    {"COLUMN",   TokenType::TOK_COLUMN},
-    {"COLUMNS",  TokenType::TOK_COLUMNS},
-    {"DATABASE", TokenType::TOK_DATABASE},
-    {"DATABASES",TokenType::TOK_DATABASES},
-    {"USE",      TokenType::TOK_USE},
-    {"INSERT",   TokenType::TOK_INSERT},
-    {"INTO",     TokenType::TOK_INTO},
-    {"VALUES",   TokenType::TOK_VALUES},
-    {"SELECT",   TokenType::TOK_SELECT},
-    {"FROM",     TokenType::TOK_FROM},
-    {"DELETE",   TokenType::TOK_DELETE},
-    {"UPDATE",   TokenType::TOK_UPDATE},
-    {"SET",      TokenType::TOK_SET},
-    {"WHERE",    TokenType::TOK_WHERE},
-    {"LIMIT",    TokenType::TOK_LIMIT},
-    {"LIKE",     TokenType::TOK_LIKE},
-    {"ORDER",    TokenType::TOK_ORDER},
-    {"BY",       TokenType::TOK_BY},
-    {"ASC",      TokenType::TOK_ASC},
-    {"DESC",     TokenType::TOK_DESC},
-    {"INT",      TokenType::TOK_INT},
-    {"DOUBLE",   TokenType::TOK_DOUBLE},
-    {"STRING",   TokenType::TOK_STRING_TYPE},
-    {"BOOL",     TokenType::TOK_BOOL},
-    {"AND",      TokenType::TOK_AND},
-    {"OR",       TokenType::TOK_OR},
-    {"NOT",      TokenType::TOK_NOT},
-    {"TRUE",     TokenType::TOK_TRUE},
-    {"FALSE",    TokenType::TOK_FALSE},
-    {"NULL",     TokenType::TOK_NULL},
+static const std::unordered_map<std::string, TokenType> KeywordTable = {
+    {"CREATE",    TokenType::TOK_CREATE},
+    {"DROP",      TokenType::TOK_DROP},
+    {"SHOW",      TokenType::TOK_SHOW},
+    {"SAVE",      TokenType::TOK_SAVE},
+    {"LOAD",      TokenType::TOK_LOAD},
+    {"TABLE",     TokenType::TOK_TABLE},
+    {"TABLES",    TokenType::TOK_TABLES},
+    {"COLUMN",    TokenType::TOK_COLUMN},
+    {"COLUMNS",   TokenType::TOK_COLUMNS},
+    {"DATABASE",  TokenType::TOK_DATABASE},
+    {"DATABASES", TokenType::TOK_DATABASES},
+    {"USE",       TokenType::TOK_USE},
+    {"INSERT",    TokenType::TOK_INSERT},
+    {"INTO",      TokenType::TOK_INTO},
+    {"VALUES",    TokenType::TOK_VALUES},
+    {"SELECT",    TokenType::TOK_SELECT},
+    {"FROM",      TokenType::TOK_FROM},
+    {"DELETE",    TokenType::TOK_DELETE},
+    {"UPDATE",    TokenType::TOK_UPDATE},
+    {"AS",        TokenType::TOK_AS},
+    {"SET",       TokenType::TOK_SET},
+    {"WHERE",     TokenType::TOK_WHERE},
+    {"LIMIT",     TokenType::TOK_LIMIT},
+    {"LIKE",      TokenType::TOK_LIKE},
+    {"ORDER",     TokenType::TOK_ORDER},
+    {"BY",        TokenType::TOK_BY},
+    {"ASC",       TokenType::TOK_ASC},
+    {"DESC",      TokenType::TOK_DESC},
+    {"INT",       TokenType::TOK_INT},
+    {"DOUBLE",    TokenType::TOK_DOUBLE},
+    {"STRING",    TokenType::TOK_STRING_TYPE},
+    {"BOOL",      TokenType::TOK_BOOL},
+    {"AND",       TokenType::TOK_AND},
+    {"OR",        TokenType::TOK_OR},
+    {"NOT",       TokenType::TOK_NOT},
+    {"TRUE",      TokenType::TOK_TRUE},
+    {"FALSE",     TokenType::TOK_FALSE},
+    {"NULL",      TokenType::TOK_NULL},
 };
 
 static TokenType checkKeyword(const std::string& word) {
-    for(const auto& wordToken : KeywordTable) {
-        if(word == wordToken.word) return wordToken.type;
-    }
-    return TokenType::TOK_IDENTIFIER;
+    auto it = KeywordTable.find(word);
+    return (it != KeywordTable.end()) ? it->second : TokenType::TOK_IDENTIFIER;
 }
 
 //====================================================================== TOKEN ======================================================================

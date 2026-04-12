@@ -23,9 +23,9 @@ void checkNotNull(const void* table, const std::string& tableName);
 
 bool checkOperator(TokenType operatorType);
 
-std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndexes);
+std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndexes, const std::vector<std::string>& aliasNames = {});
 
-void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes = {});
+void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes = {}, const std::vector<std::string>& aliasNames = {});
 
 bool evaluateLogicalConditions(const Row* row, const std::vector<Condition>& conditions, const std::vector<TokenType>& logicalOps);
 

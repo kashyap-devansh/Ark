@@ -37,6 +37,7 @@ enum class TokenType {
     TOK_FROM,              // FROM
     TOK_DELETE,            // DELETE
     TOK_UPDATE,            // UPDATE
+    TOK_AS,                // AS
     TOK_SET,               // SET
     TOK_WHERE,             // WHERE
     TOK_LIMIT,             // LIMIT
