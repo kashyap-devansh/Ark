@@ -284,6 +284,10 @@ void Table::deleteRow(int rowIndex) {
     rows.erase(rows.begin() + rowIndex);
 }
 
+void Table::clearRows() {
+    rows.clear();
+}
+
 std::vector<Row> Table::selectAll() const {
     return rows;
 }

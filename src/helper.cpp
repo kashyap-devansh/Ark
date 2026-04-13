@@ -1,4 +1,5 @@
 #include "helper.h"
+#include "error.h"
 #include <iostream>
 
 std::string tokenTypeToString(TokenType type) {
@@ -103,8 +104,7 @@ int getColumnIndex(Table* table, const std::string& columnName) {
 
 void checkNotNull(const void* table, const std::string& tableName) {
     if (!table) {
-        std::cerr << "No table found with name : " << tableName << "\n";
-        exit(EXIT_FAILURE);
+        throw RuntimeException(RuntimeError::TABLE_NOT_FOUND, 0, 0, tableName, "");
     }
 }
 

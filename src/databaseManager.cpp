@@ -88,6 +88,7 @@ void DatabaseManager::useDatabase(const std::string& name) {
     }
 
     currentDatabase = Database(name, path);
+    currentDatabase.loadDatabase();
     hasActiveDatabase = true;
 
     std::cout << "Using database: " << name << "\n";

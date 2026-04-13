@@ -243,6 +243,7 @@ void Parser::parse(DatabaseManager& manager) {
 
             db->saveDatabase();
             advance();
+            consume(TokenType::TOK_SEMICOLON);
             break;
         }
 
@@ -252,6 +253,7 @@ void Parser::parse(DatabaseManager& manager) {
             
             db->loadDatabase();
             advance();
+            consume(TokenType::TOK_SEMICOLON);
             break;
         }
 
@@ -727,7 +729,7 @@ void Parser::parseDelete(DatabaseManager& manager) {
     if(match(TokenType::TOK_SEMICOLON)) {
         consume(TokenType::TOK_SEMICOLON);
 
-        while(!table->selectAll().empty()) table->deleteRow(0);
+        table->clearRows();
     }
     else if(match(TokenType::TOK_WHERE)) {
         std::vector<int> whereRows = parseWhereClause(table);

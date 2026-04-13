@@ -136,6 +136,7 @@ public :
     Row* getRow(int rowIndex);
 
     void deleteRow(int rowIndex);
+    void clearRows();
 
     std::vector<Row> selectAll() const;
 
