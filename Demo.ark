@@ -1,28 +1,26 @@
 CREATE DATABASE school;
 USE school;
 
-CREATE TABLE students (name STRING, grade INT, age INT);
+CREATE TABLE students (name STRING, grade INT, course_id INT);
 
-INSERT INTO students VALUES ("Alice", 90, 20);
-INSERT INTO students VALUES ("Bob", 75, 22);
-INSERT INTO students VALUES ("Charlie", 85, 21);
+INSERT INTO students VALUES ("Alice", 90, 1);
+INSERT INTO students VALUES ("Bob", 75, 2);
+INSERT INTO students VALUES ("Alice", 90, 1);
+INSERT INTO students VALUES ("Charlie", 85, 1);
+INSERT INTO students VALUES ("Bob", 75, 2);
+INSERT INTO students VALUES ("Diana", 90, 3);
 
--- Single column alias
-SELECT name AS student_name FROM students;
+-- Single column distinct
+SELECT DISTINCT name FROM students;
 
--- Multiple column aliases
-SELECT name AS student_name, grade AS score, age AS years FROM students;
+-- Multiple columns distinct
+SELECT DISTINCT name, grade FROM students;
 
--- One alias, one without
-SELECT name AS student_name, grade FROM students;
+-- Distinct with WHERE
+SELECT DISTINCT name FROM students WHERE grade > 80;
 
--- Alias with WHERE
-SELECT name AS student_name, grade AS score FROM students WHERE grade > 80;
+-- Distinct with ORDER BY
+SELECT DISTINCT name FROM students ORDER BY name ASC;
 
--- Alias with ORDER BY
-SELECT name AS student_name, grade AS score FROM students ORDER BY grade DESC;
-
--- Alias with WHERE and ORDER BY
-SELECT name AS student_name, grade AS score FROM students WHERE grade > 80 ORDER BY grade ASC;
-
--- Alias with LIMIT
+-- Distinct with WHERE and ORDER BY
+SELECT DISTINCT name, grade FROM students WHERE grade > 80 ORDER BY grade DESC;

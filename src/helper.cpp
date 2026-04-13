@@ -1,5 +1,6 @@
 #include "helper.h"
 #include "error.h"
+#include <set>
 #include <iostream>
 
 std::string tokenTypeToString(TokenType type) {
@@ -142,7 +143,7 @@ std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndex
     return widths;
 }
 
-void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes, const std::vector<std::string>& aliasNames) {
+void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes, const std::vector<std::string>& aliasNames, bool distinct) {
     std::vector<int> widths = computeColWidths(table, colIndexes, aliasNames);
 
     printBorder(widths, colIndexes);
@@ -167,8 +168,19 @@ void printTableResult(Table* table, const std::vector<int>& colIndexes, const st
     if(rowIndexes.empty()) for(int i = 0; i < table->getRowCount(); i++) order.push_back(i); 
     else order = rowIndexes;
 
+    std::set<std::vector<std::string>> seen;
+
     for(int r : order) {
         const Row row = allRows[r];
+
+        if(distinct) {
+            std::vector<std::string> rowVals;
+            for(int i = 0; i < static_cast<int>(colIndexes.size()); i++) rowVals.push_back(row.getCell(colIndexes[i]).toString());
+
+            if(seen.find(rowVals) != seen.end()) continue;
+            seen.insert(rowVals);
+        }
+
         std::cout << "|";
 
         for(int i = 0; i < colIndexes.size(); i++) {

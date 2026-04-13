@@ -463,7 +463,7 @@ void Parser::parseShowColumns(DatabaseManager& manager) {
     printBorder(widths, columnIndexes);
 }
 
-void Parser::parseOrderBy(Table* table, std::vector<int> whereRows, std::vector<int> columnIndexes, std::vector<std::string> aliasNames) {
+void Parser::parseOrderBy(Table* table, std::vector<int> whereRows, std::vector<int> columnIndexes, std::vector<std::string> aliasNames, bool distinct) {
     consume(TokenType::TOK_BY);
 
     std::vector<Row> rows = table->selectAll();
@@ -514,7 +514,7 @@ void Parser::parseOrderBy(Table* table, std::vector<int> whereRows, std::vector<
         for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
     }
 
-    printTableResult(table, columnIndexes, sortedRows, aliasNames);
+    printTableResult(table, columnIndexes, sortedRows, aliasNames, distinct);
 
     consume(TokenType::TOK_SEMICOLON);
 }
@@ -564,6 +564,12 @@ void Parser::parseInsert(DatabaseManager& manager) {
 
 void Parser::parseSelect(DatabaseManager& manager) {
     consume(TokenType::TOK_SELECT);
+
+    bool distinct = false;
+    if(match(TokenType::TOK_DISTINCT)) {
+        consume(TokenType::TOK_DISTINCT);
+        distinct = true;
+    }
 
     std::vector<std::string> selectedColumns;
     bool selectAll = false;
@@ -620,7 +626,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
             }
         }
 
-        if(match(TokenType::TOK_BY)) parseOrderBy(table, whereRows, columnIndexes, aliasColumnNames);
+        if(match(TokenType::TOK_BY)) parseOrderBy(table, whereRows, columnIndexes, aliasColumnNames, distinct);
         return;
     }
     
@@ -642,7 +648,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
         } 
     }
 
-    printTableResult(table, columnIndexes, whereRows, alias ? aliasColumnNames : std::vector<std::string>{});
+    printTableResult(table, columnIndexes, whereRows, alias ? aliasColumnNames : std::vector<std::string>{}, distinct);
 }
 
 void Parser::parseUpdate(DatabaseManager& manager) {

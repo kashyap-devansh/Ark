@@ -554,13 +554,15 @@ void Database::loadDatabase() {
     tables.clear();
 
     std::string registryPath = databaseFolderPath + "/tables.meta";
-    std::ifstream fin(registryPath);
+    
+    if(!std::filesystem::exists(registryPath)) return;
 
+    std::ifstream fin(registryPath);
     if(!fin) {
-        std::cerr << "No tables registryf found.\n";
+        std::cerr << "Failed to open table registry.\n";
         return;
     }
-
+    
     std::string tableName;
 
     while(std::getline(fin, tableName)) {

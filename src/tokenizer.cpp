@@ -23,6 +23,7 @@ static const std::unordered_map<std::string, TokenType> KeywordTable = {
     {"DELETE",    TokenType::TOK_DELETE},
     {"UPDATE",    TokenType::TOK_UPDATE},
     {"AS",        TokenType::TOK_AS},
+    {"DISTINCT",  TokenType::TOK_DISTINCT},
     {"SET",       TokenType::TOK_SET},
     {"WHERE",     TokenType::TOK_WHERE},
     {"LIMIT",     TokenType::TOK_LIMIT},

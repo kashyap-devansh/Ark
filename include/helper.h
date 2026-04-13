@@ -25,7 +25,7 @@ bool checkOperator(TokenType operatorType);
 
 std::vector<int> computeColWidths(Table* table, const std::vector<int>& colIndexes, const std::vector<std::string>& aliasNames = {});
 
-void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes = {}, const std::vector<std::string>& aliasNames = {});
+void printTableResult(Table* table, const std::vector<int>& colIndexes, const std::vector<int>& rowIndexes = {}, const std::vector<std::string>& aliasNames = {}, bool distinct = false);
 
 bool evaluateLogicalConditions(const Row* row, const std::vector<Condition>& conditions, const std::vector<TokenType>& logicalOps);
 
