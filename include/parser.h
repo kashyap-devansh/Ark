@@ -24,7 +24,9 @@ private :
     void parseAggregateSelect(DatabaseManager& manager, TokenType aggregator);
     void parseUpdate(DatabaseManager& manager);
     void parseDelete(DatabaseManager& manager);
+    void parseTruncate(DatabaseManager& manager);
 
+    void parseRename(DatabaseManager& manager);
     void parseShowTables(DatabaseManager& manager);
     void parseShowDatabases(DatabaseManager& manager);
     void parseShowColumns(DatabaseManager& manager);

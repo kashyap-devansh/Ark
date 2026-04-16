@@ -18,41 +18,6 @@ INSERT INTO employees VALUES
 (4, "David", 80000.0, 40),
 (5, "Eve", NULL, 28);
 
--- =========================
--- NULL AGGREGATE TESTS
--- =========================
-asjflj
-SELECT COUNT(*) FROM employees;         -- expect 5
-SELECT COUNT(salary) FROM employees;    -- expect 4 (NULL ignored)
+TRUNCATE TABLE employees;
 
-SELECT SUM(salary) FROM employees;      -- expect 260000
-SELECT AVG(salary) FROM employees;      -- expect 65000
-
-SELECT MIN(salary) FROM employees;      -- expect 50000
-SELECT MAX(salary) FROM employees;      -- expect 80000
-
--- =========================
--- WHERE + NULL TESTS
--- =========================
-
-SELECT COUNT(*) FROM employees WHERE salary > 0.0;  -- expect 4
-SELECT COUNT(*) FROM employees WHERE salary < 0.0;  -- expect 0
-
--- NULL should NOT match comparisons
-SELECT COUNT(*) FROM employees WHERE salary > 60000.0; -- expect 2
-
--- =========================
--- EDGE CASE: ONLY NULL
--- =========================
-
-CREATE TABLE testnull (
-    val DOUBLE
-);
-
-INSERT INTO testnull VALUES
-(NULL),
-(NULL);
-
-SELECT COUNT(val) FROM testnull;   -- expect 0
-SELECT SUM(val) FROM testnull;     -- expect 0
-SELECT AVG(val) FROM testnull;     -- expect 0
+SELECT * FROM employees;

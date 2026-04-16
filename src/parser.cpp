@@ -229,13 +229,14 @@ std::vector<int> Parser::parseWhereClause(Table* table) {
 void Parser::parse(DatabaseManager& manager) {
     switch(current.getType()) {
         case TokenType::TOK_CREATE : parseCreate(manager); break;
-        case TokenType::TOK_DROP   : parseDrop(manager); break;
-        case TokenType::TOK_USE    : parseUse(manager); break;
-        case TokenType::TOK_SHOW   : parseShow(manager); break;
+        case TokenType::TOK_DROP : parseDrop(manager); break;
+        case TokenType::TOK_USE : parseUse(manager); break;
+        case TokenType::TOK_SHOW : parseShow(manager); break;
         case TokenType::TOK_INSERT : parseInsert(manager); break;
         case TokenType::TOK_SELECT : parseSelect(manager); break;
         case TokenType::TOK_UPDATE : parseUpdate(manager); break;
         case TokenType::TOK_DELETE : parseDelete(manager); break;
+        case TokenType::TOK_TRUNCATE : parseTruncate(manager); break;
 
         case TokenType::TOK_SAVE   : {
             Database* db = manager.getCurrentDatabase();
@@ -1060,4 +1061,25 @@ void Parser::parseDelete(DatabaseManager& manager) {
         
         consume(TokenType::TOK_SEMICOLON);
     }
+}
+
+void Parser::parseTruncate(DatabaseManager& manager) {
+    consume(TokenType::TOK_TRUNCATE);
+
+    consume(TokenType::TOK_TABLE);
+
+    std::string tableName = current.getLexeme();
+
+    consume(TokenType::TOK_IDENTIFIER);
+
+    Database* db = manager.getCurrentDatabase();
+    if(!db) return;
+
+    Table* table = db->getTable(tableName);
+
+    table->clearRows();
+
+    std::cout << "Cleared All the rows from table " << tableName << "\n";
+
+    consume(TokenType::TOK_SEMICOLON);
 }

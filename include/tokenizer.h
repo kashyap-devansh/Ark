@@ -26,6 +26,7 @@ enum class TokenType {
     // ----- Table Keywords -----
     TOK_TABLE,             // TABLE
     TOK_TABLES,            // TABLES
+    TOK_RENAME,            // RENAME
     TOK_COLUMN,            // COLUMN
     TOK_COLUMNS,           // COLUMNS
 
@@ -36,6 +37,7 @@ enum class TokenType {
     TOK_SELECT,            // SELECT
     TOK_FROM,              // FROM
     TOK_DELETE,            // DELETE
+    TOK_TRUNCATE,          // TRUNCATE
     TOK_UPDATE,            // UPDATE
     TOK_AS,                // AS
     TOK_DISTINCT,          // DISTINCT
