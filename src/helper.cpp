@@ -196,3 +196,32 @@ void printTableResult(Table* table, const std::vector<int>& colIndexes, const st
 
     printBorder(widths, colIndexes);
 }
+
+void printAggregateResult(const std::string& label, const std::string& value) {
+    int width = std::max(label.length(), value.length());
+
+    // Top border
+    std::cout << "+";
+    for(int i = 0; i < width + 2; i++) std::cout << "-";
+    std::cout << "+\n";
+
+    // Header
+    std::cout << "| " << label;
+    for(int i = label.length(); i < width; i++) std::cout << " ";
+    std::cout << " |\n";
+
+    // Separator
+    std::cout << "+";
+    for(int i = 0; i < width + 2; i++) std::cout << "-";
+    std::cout << "+\n";
+
+    // Value
+    std::cout << "| " << value;
+    for(int i = value.length(); i < width; i++) std::cout << " ";
+    std::cout << " |\n";
+
+    // Bottom border
+    std::cout << "+";
+    for(int i = 0; i < width + 2; i++) std::cout << "-";
+    std::cout << "+\n";
+}

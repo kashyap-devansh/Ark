@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
             while(file.get(ch) && ch != '\n');
             
             currentLine++;
+            commandStartLine = currentLine;
             continue;
         }
 

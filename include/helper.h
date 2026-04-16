@@ -29,4 +29,5 @@ void printTableResult(Table* table, const std::vector<int>& colIndexes, const st
 
 bool evaluateLogicalConditions(const Row* row, const std::vector<Condition>& conditions, const std::vector<TokenType>& logicalOps);
 
+void printAggregateResult(const std::string& label, const std::string& value);
 #endif

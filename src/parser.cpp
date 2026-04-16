@@ -565,6 +565,12 @@ void Parser::parseInsert(DatabaseManager& manager) {
 void Parser::parseSelect(DatabaseManager& manager) {
     consume(TokenType::TOK_SELECT);
 
+    if(match(TokenType::TOK_COUNT) || match(TokenType::TOK_AVG) || match(TokenType::TOK_SUM) || match(TokenType::TOK_MIN) || match(TokenType::TOK_MAX)) {
+        parseAggregateSelect(manager, current.getType());
+
+        return;
+    }
+
     bool distinct = false;
     if(match(TokenType::TOK_DISTINCT)) {
         consume(TokenType::TOK_DISTINCT);
@@ -649,6 +655,307 @@ void Parser::parseSelect(DatabaseManager& manager) {
     }
 
     printTableResult(table, columnIndexes, whereRows, alias ? aliasColumnNames : std::vector<std::string>{}, distinct);
+}
+
+void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator) {
+    consume(aggregator);
+
+    int count = 0;
+    std::string selectedColumn;
+    int selectedColumnIndex = -1;
+
+    switch(aggregator) {
+        case TokenType::TOK_COUNT : {
+            consume(TokenType::TOK_LPAREN);
+
+            bool selectAll = false;
+
+            if(match(TokenType::TOK_STAR)) {
+                selectAll = true;
+                consume(TokenType::TOK_STAR);
+            }
+            else {
+                selectedColumn = current.getLexeme();
+                consume(TokenType::TOK_IDENTIFIER);
+            }
+            consume(TokenType::TOK_RPAREN);
+
+            consume(TokenType::TOK_FROM);
+
+            Database* db = manager.getCurrentDatabase();
+            if(!db) return;
+
+            std::string tableName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            Table* table = db->getTable(tableName);
+            checkNotNull(table, tableName);
+
+            std::vector<int> whereRows;
+            if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
+
+            consume(TokenType::TOK_SEMICOLON);
+
+            if(selectAll) {
+                if(whereRows.empty()) count = table->getRowCount();
+                else count = whereRows.size();
+
+                printAggregateResult("COUNT(*)", std::to_string(count));
+            }
+            else {
+                std::vector<Row> rows = table->selectAll();
+
+                selectedColumnIndex = getColumnIndex(table, selectedColumn);
+
+                if(whereRows.empty()) for(const Row& row : rows) if(!row.getCell(selectedColumnIndex).isNullValue()) count++;
+                else for(int idx : whereRows) if(!rows[idx].getCell(selectedColumnIndex).isNullValue()) count++;
+
+                std::string printColumnName = "COUNT(" + selectedColumn + ")";
+                printAggregateResult(printColumnName, std::to_string(count));
+            }
+
+            break;
+        }
+        case TokenType::TOK_AVG : {
+            consume(TokenType::TOK_LPAREN);
+
+            std::string selectedColumn = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            consume(TokenType::TOK_RPAREN);
+            consume(TokenType::TOK_FROM);
+
+            Database* db = manager.getCurrentDatabase();
+            if(!db) return;
+
+            std::string tableName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            Table* table = db->getTable(tableName);
+            checkNotNull(table, tableName);
+
+            int selectedColumnIndex = getColumnIndex(table, selectedColumn);
+
+            std::vector<int> whereRows;
+            if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
+
+            consume(TokenType::TOK_SEMICOLON);
+
+            std::vector<Row> rows = table->selectAll();
+
+            double sum = 0.0;
+
+            if(whereRows.empty()) {
+                for(const Row& row : rows) {
+                    Cell cell = row.getCell(selectedColumnIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(cell.isInt()) sum += cell.getInt();
+                    else if(cell.isDouble()) sum += cell.getDouble();
+
+                    count++;
+                }
+            }
+            else {
+                for(int idx : whereRows) {
+                    Cell cell = rows[idx].getCell(selectedColumnIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(cell.isInt()) sum += cell.getInt();
+                    else if(cell.isDouble()) sum += cell.getDouble();
+
+                    count++;
+                }
+            }
+
+            double avg = (count == 0) ? 0 : sum / count;
+
+            std::string printColumnName = "AVG(" + selectedColumn + ")";
+            printAggregateResult(printColumnName, std::to_string(avg));
+
+            break;
+        }
+        case TokenType::TOK_SUM : {
+            consume(TokenType::TOK_LPAREN);
+
+            std::string selectedColumn = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+            
+            consume(TokenType::TOK_RPAREN);
+            consume(TokenType::TOK_FROM);
+
+            Database* db = manager.getCurrentDatabase();
+            if(!db) return;
+
+            std::string tableName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            Table* table = db->getTable(tableName);
+            checkNotNull(table, tableName);
+
+            int selectedColumnIndex = getColumnIndex(table, selectedColumn);
+
+            std::vector<int> whereRows;
+            if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
+
+            consume(TokenType::TOK_SEMICOLON);
+
+            std::vector<Row> rows = table->selectAll();
+
+            double sum = 0.0;
+            if(whereRows.empty()) {
+                for(const Row& row : rows) {
+                    Cell cell = row.getCell(selectedColumnIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(cell.isInt()) sum += cell.getInt();
+                    else if(cell.isDouble()) sum += cell.getDouble();
+                }
+            }
+            else {
+                for(int idx : whereRows) {
+                    Cell cell = rows[idx].getCell(selectedColumnIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(cell.isInt()) sum += cell.getInt();
+                    else if(cell.isDouble()) sum += cell.getDouble();
+                }
+            }
+
+            std::string printColumnName = "SUM(" + selectedColumn + ")";
+            printAggregateResult(printColumnName, std::to_string(sum));
+
+            break;
+        }
+        case TokenType::TOK_MIN : {
+            consume(TokenType::TOK_LPAREN);
+
+            std::string selectedColumn = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            consume(TokenType::TOK_RPAREN);
+            consume(TokenType::TOK_FROM);
+
+            Database* db = manager.getCurrentDatabase();
+            if(!db) return;
+
+            std::string tableName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            Table* table = db->getTable(tableName);
+            checkNotNull(table, tableName);
+
+            int colIndex = getColumnIndex(table, selectedColumn);
+
+            std::vector<int> whereRows;
+            if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
+
+            consume(TokenType::TOK_SEMICOLON);
+
+            std::vector<Row> rows = table->selectAll();
+
+            bool found = false;
+            Cell minVal;
+
+            if(whereRows.empty()) {
+                for(const Row& row : rows) {
+                    Cell cell = row.getCell(colIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(!found || cell < minVal) {
+                        minVal = cell;
+                        found = true;
+                    }
+                }
+            }
+            else {
+                for(int idx : whereRows) {
+                    Cell cell = rows[idx].getCell(colIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(!found || cell < minVal) {
+                        minVal = cell;
+                        found = true;
+                    }
+                }
+            }
+
+            std::string printColumnName = "MIN(" + selectedColumn + ")";
+
+            if(found) printAggregateResult(printColumnName, minVal.toString());
+            else printAggregateResult(printColumnName, "NULL");
+
+            break;
+        }
+        case TokenType::TOK_MAX : {
+            consume(TokenType::TOK_LPAREN);
+
+            std::string selectedColumn = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            consume(TokenType::TOK_RPAREN);
+            consume(TokenType::TOK_FROM);
+
+            Database* db = manager.getCurrentDatabase();
+            if(!db) return;
+
+            std::string tableName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
+
+            Table* table = db->getTable(tableName);
+            checkNotNull(table, tableName);
+
+            int colIndex = getColumnIndex(table, selectedColumn);
+
+            std::vector<int> whereRows;
+            if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
+
+            consume(TokenType::TOK_SEMICOLON);
+
+            std::vector<Row> rows = table->selectAll();
+
+            bool found = false;
+            Cell maxVal;
+
+            if(whereRows.empty()) {
+                for(const Row& row : rows) {
+                    Cell cell = row.getCell(colIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(!found || cell > maxVal) {
+                        maxVal = cell;
+                        found = true;
+                    }
+                }
+            }
+            else {
+                for(int idx : whereRows) {
+                    Cell cell = rows[idx].getCell(colIndex);
+
+                    if(cell.isNullValue()) continue;
+
+                    if(!found || cell > maxVal) {
+                        maxVal = cell;
+                        found = true;
+                    }
+                }
+            }
+
+            std::string printColumnName = "MAX(" + selectedColumn + ")";
+
+            if(found) printAggregateResult(printColumnName, maxVal.toString());
+            else printAggregateResult(printColumnName, "NULL");
+
+            break;
+        }
+    }
 }
 
 void Parser::parseUpdate(DatabaseManager& manager) {

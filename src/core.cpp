@@ -71,6 +71,10 @@ bool Cell::getBool() const {
     return value.Bool;
 }
 
+bool Cell::isNullValue() const {
+    return isNull;
+}
+
 bool Cell::isInt() const {
     return type == DataType::INT && !isNull;
 }
@@ -255,7 +259,11 @@ ValidationResult Table::validateRow(const Row& row) const {
     if(row.getCellCount() != static_cast<int>(columns.size())) return ValidationResult::COUNT_MISMATCH;
 
     for(size_t i = 0; i < columns.size(); i++) {
-        if(row.getCell(i).getType() != columns.at(i).getType()) return ValidationResult::TYPE_MISMATCH;
+        const Cell& cell = row.getCell(i);
+
+        if(cell.isNullValue()) continue;
+
+        if(cell.getType() != columns.at(i).getType()) return ValidationResult::TYPE_MISMATCH;
     }
 
     return ValidationResult::OK;

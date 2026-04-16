@@ -65,6 +65,7 @@ public :
     std::string getString() const;
     bool getBool() const;
 
+    bool isNullValue() const;
     bool isInt() const;
     bool isDouble() const;
     bool isString() const;

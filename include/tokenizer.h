@@ -48,6 +48,13 @@ enum class TokenType {
     TOK_ASC,               // ASCENDING
     TOK_DESC,              // DASCEDNING
 
+    // ----- Aggreate Functions -----
+    TOK_COUNT,             // COUNT 
+    TOK_AVG,               // AVERAGE 
+    TOK_SUM,               // SUM
+    TOK_MIN,               // MINIMUM
+    TOK_MAX,               // MAXIMUM
+
     // ----- Data Types -----
     TOK_INT,               // INT
     TOK_DOUBLE,            // DOUBLE

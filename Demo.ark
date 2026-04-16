@@ -1,26 +1,58 @@
-CREATE DATABASE school;
-USE school;
+-- Create and use database
+CREATE DATABASE nulldb;
+USE nulldb;
 
-CREATE TABLE students (name STRING, grade INT, course_id INT);
+-- Create table
+CREATE TABLE employees (
+    id INT,
+    name STRING,
+    salary DOUBLE,
+    age INT
+);
 
-INSERT INTO students VALUES ("Alice", 90, 1);
-INSERT INTO students VALUES ("Bob", 75, 2);
-INSERT INTO students VALUES ("Alice", 90, 1);
-INSERT INTO students VALUES ("Charlie", 85, 1);
-INSERT INTO students VALUES ("Bob", 75, 2);
-INSERT INTO students VALUES ("Diana", 90, 3);
+-- Insert data (with NULL)
+INSERT INTO employees VALUES
+(1, "Alice", 50000.0, 25),
+(2, "Bob", 60000.0, 30),
+(3, "Charlie", 70000.0, 35),
+(4, "David", 80000.0, 40),
+(5, "Eve", NULL, 28);
 
--- Single column distinct
-SELECT DISTINCT name FROM students;
+-- =========================
+-- NULL AGGREGATE TESTS
+-- =========================
+asjflj
+SELECT COUNT(*) FROM employees;         -- expect 5
+SELECT COUNT(salary) FROM employees;    -- expect 4 (NULL ignored)
 
--- Multiple columns distinct
-SELECT DISTINCT name, grade FROM students;
+SELECT SUM(salary) FROM employees;      -- expect 260000
+SELECT AVG(salary) FROM employees;      -- expect 65000
 
--- Distinct with WHERE
-SELECT DISTINCT name FROM students WHERE grade > 80;
+SELECT MIN(salary) FROM employees;      -- expect 50000
+SELECT MAX(salary) FROM employees;      -- expect 80000
 
--- Distinct with ORDER BY
-SELECT DISTINCT name FROM students ORDER BY name ASC;
+-- =========================
+-- WHERE + NULL TESTS
+-- =========================
 
--- Distinct with WHERE and ORDER BY
-SELECT DISTINCT name, grade FROM students WHERE grade > 80 ORDER BY grade DESC;
+SELECT COUNT(*) FROM employees WHERE salary > 0.0;  -- expect 4
+SELECT COUNT(*) FROM employees WHERE salary < 0.0;  -- expect 0
+
+-- NULL should NOT match comparisons
+SELECT COUNT(*) FROM employees WHERE salary > 60000.0; -- expect 2
+
+-- =========================
+-- EDGE CASE: ONLY NULL
+-- =========================
+
+CREATE TABLE testnull (
+    val DOUBLE
+);
+
+INSERT INTO testnull VALUES
+(NULL),
+(NULL);
+
+SELECT COUNT(val) FROM testnull;   -- expect 0
+SELECT SUM(val) FROM testnull;     -- expect 0
+SELECT AVG(val) FROM testnull;     -- expect 0
