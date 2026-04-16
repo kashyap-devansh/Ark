@@ -168,14 +168,14 @@ void printTableResult(Table* table, const std::vector<int>& colIndexes, const st
     if(rowIndexes.empty()) for(int i = 0; i < table->getRowCount(); i++) order.push_back(i); 
     else order = rowIndexes;
 
-    std::set<std::vector<std::string>> seen;
+    std::set<std::vector<Cell>> seen;
 
     for(int r : order) {
         const Row row = allRows[r];
 
         if(distinct) {
-            std::vector<std::string> rowVals;
-            for(int i = 0; i < static_cast<int>(colIndexes.size()); i++) rowVals.push_back(row.getCell(colIndexes[i]).toString());
+            std::vector<Cell> rowVals;
+            for(int i = 0; i < static_cast<int>(colIndexes.size()); i++) rowVals.push_back(row.getCell(colIndexes[i]));
 
             if(seen.find(rowVals) != seen.end()) continue;
             seen.insert(rowVals);
