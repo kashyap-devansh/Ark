@@ -13,6 +13,10 @@ std::string Column::getName() const {
     return columnName;
 }
 
+void Column::setName(std::string newName) {
+    columnName = newName;
+}
+
 DataType Column::getType() const {
     return type;
 }
@@ -235,8 +239,16 @@ std::string Table::getName() const {
     return tableName;
 }
 
+void Table::setName(std::string newName) {
+    tableName = newName;
+}
+
 void Table::addColumn(const Column& column) {
     columns.push_back(column);   
+}
+
+Column& Table::getColumn(int index) {
+    return columns.at(index);
 }
 
 int Table::getColumnCount() const {
@@ -319,6 +331,14 @@ void Table::updateCell(int rowIndex, int columnIndex, const Cell& newValue) {
     rows.at(rowIndex).setCell(columnIndex, newValue);
 
     std::cout << "Cell update successfully.\n";
+}
+
+void Table::setStructurePath(const std::string& path) {
+    structureFilePath = path;
+}
+
+void Table::setDataPath(const std::string& path) {
+    dataFilePath = path;
 }
 
 bool Table::saveStructureToFile() const {

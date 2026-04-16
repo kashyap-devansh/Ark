@@ -38,6 +38,7 @@ public :
     Column(const std::string& name, DataType type);
 
     std::string getName() const;
+    void setName(std::string newName);
     DataType getType() const;
 };
 
@@ -121,9 +122,11 @@ public :
     Table(const std::string& name, const std::string& structurePath, const std::string& dataPath);
 
     std::string getName() const;
+    void setName(std::string newName);
 
     void addColumn(const Column& column);
 
+    Column& getColumn(int index);
     int getColumnCount() const;
     std::string getColumName(int index) const;
     DataType getColumnType(int index) const;
@@ -140,6 +143,9 @@ public :
     void clearRows();
 
     std::vector<Row> selectAll() const;
+
+    void setStructurePath(const std::string& path);
+    void setDataPath(const std::string& path);
 
     bool saveStructureToFile() const;
     bool loadStructureFromFile();

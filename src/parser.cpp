@@ -3,6 +3,7 @@
 #include "error.h"
 
 #include <iostream>
+#include <filesystem>
 
 Parser::Parser(const std::string& input, int startLine) : tokenizer(input, startLine) {
     current = tokenizer.nextToken();
@@ -237,6 +238,7 @@ void Parser::parse(DatabaseManager& manager) {
         case TokenType::TOK_UPDATE : parseUpdate(manager); break;
         case TokenType::TOK_DELETE : parseDelete(manager); break;
         case TokenType::TOK_TRUNCATE : parseTruncate(manager); break;
+        case TokenType::TOK_RENAME : parseRename(manager); break;
 
         case TokenType::TOK_SAVE   : {
             Database* db = manager.getCurrentDatabase();
@@ -1082,4 +1084,103 @@ void Parser::parseTruncate(DatabaseManager& manager) {
     std::cout << "Cleared All the rows from table " << tableName << "\n";
 
     consume(TokenType::TOK_SEMICOLON);
+}
+
+void Parser::parseRename(DatabaseManager& manager) {
+    consume(TokenType::TOK_RENAME);
+
+    if(match(TokenType::TOK_TABLE)) {
+        consume(TokenType::TOK_TABLE);
+
+        std::string currentTableName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        consume(TokenType::TOK_TO);
+
+        std::string newTableName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+        consume(TokenType::TOK_SEMICOLON);
+
+        Database* db = manager.getCurrentDatabase();
+        if(!db) return;
+
+        Table* table = db->getTable(currentTableName);
+        if(!table) {       
+            std::cerr << "Table not found\n";
+            return;
+        }
+
+        std::string base = "./databases/" + db->getName();
+
+        std::string oldStruct = base + "/tables/" + currentTableName + ".tbl";
+        std::string oldData   = base + "/data/"   + currentTableName + ".dat";
+
+        std::string newStruct = base + "/tables/" + newTableName + ".tbl";
+        std::string newData   = base + "/data/"   + newTableName + ".dat";
+
+        if(!std::filesystem::exists(oldStruct)) {
+            table->saveStructureToFile();
+        }
+        if(!std::filesystem::exists(oldData)) {
+            table->saveDataToFile();
+        }
+
+        if(std::filesystem::exists(oldStruct)) std::filesystem::rename(oldStruct, newStruct);
+
+        if(std::filesystem::exists(oldData)) std::filesystem::rename(oldData, newData);
+
+        table->setName(newTableName);
+        table->setStructurePath(newStruct);
+        table->setDataPath(newData);
+
+        table->saveStructureToFile();
+
+        std::cout << "Table renamed successfully\n";
+    }
+    else if(match(TokenType::TOK_COLUMN)) {
+        consume(TokenType::TOK_COLUMN); 
+
+        std::string currentColumnName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        consume(TokenType::TOK_TO);
+
+        std::string newColumnName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        consume(TokenType::TOK_FROM);
+
+        std::string tableName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        Database* db = manager.getCurrentDatabase();
+        if(!db) return;
+
+        Table* table = db->getTable(tableName);
+        if(!table) {
+            std::cerr << "Table not found\n";
+            return;
+        }
+
+        int columnIndex = getColumnIndex(table, currentColumnName);
+        if(columnIndex == -1) {
+            std::cerr << "Column not found\n";
+            return;
+        }
+
+        for(int i = 0; i < table->getColumnCount(); i++) {
+            if(table->getColumName(i) == newColumnName) {
+                std::cerr << "Column already exists\n";
+                return;
+            }
+        }
+
+        table->getColumn(columnIndex).setName(newColumnName);
+
+        table->saveStructureToFile();
+
+        consume(TokenType::TOK_SEMICOLON);
+
+        std::cout << "Column renamed successfully\n";
+    }
 }

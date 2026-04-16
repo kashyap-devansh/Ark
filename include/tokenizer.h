@@ -47,6 +47,7 @@ enum class TokenType {
     TOK_LIKE,              // LIKE
     TOK_ORDER,             // ORDER 
     TOK_BY,                // BY
+    TOK_TO,                // TO
     TOK_ASC,               // ASCENDING
     TOK_DESC,              // DASCEDNING
 

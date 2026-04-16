@@ -32,6 +32,7 @@ static const std::unordered_map<std::string, TokenType> KeywordTable = {
     {"LIKE",      TokenType::TOK_LIKE},
     {"ORDER",     TokenType::TOK_ORDER},
     {"BY",        TokenType::TOK_BY},
+    {"TO",        TokenType::TOK_TO},
     {"ASC",       TokenType::TOK_ASC},
     {"DESC",      TokenType::TOK_DESC},
     {"COUNT",     TokenType::TOK_COUNT},

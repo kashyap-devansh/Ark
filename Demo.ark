@@ -1,23 +1,35 @@
--- Create and use database
-CREATE DATABASE nulldb;
-USE nulldb;
+CREATE DATABASE testdb;
+USE testdb;
 
--- Create table
-CREATE TABLE employees (
+CREATE TABLE users (
     id INT,
     name STRING,
-    salary DOUBLE,
     age INT
 );
 
--- Insert data (with NULL)
-INSERT INTO employees VALUES
-(1, "Alice", 50000.0, 25),
-(2, "Bob", 60000.0, 30),
-(3, "Charlie", 70000.0, 35),
-(4, "David", 80000.0, 40),
-(5, "Eve", NULL, 28);
+SHOW COLUMNS FROM users;
 
-TRUNCATE TABLE employees;
+INSERT INTO users VALUES (1, "Alice", 20);
+INSERT INTO users VALUES (2, "Bob", 25);
 
-SELECT * FROM employees;
+SELECT * FROM users;
+
+RENAME COLUMN name TO full_name FROM users;
+
+SHOW COLUMNS FROM users;
+
+
+
+SELECT full_name FROM users;
+
+SELECT id, full_name, age FROM users;
+
+-- =========================
+-- EDGE CASES
+-- =========================
+
+-- rename non-existing column (should fail)
+RENAME COLUMN unknown TO test FROM users;
+
+-- rename to existing column name (should fail)
+RENAME COLUMN age TO id FROM users;
