@@ -6,25 +6,17 @@
 #include "error.h"
 
 int main(int argc, char* argv[]) {
-    try {
-        if(argc < 2) {
-            throw RuntimeException(RuntimeError::FILE_NOT_PROVIDED, 0, 0, "", "");
-        }
-    }
-    catch(const ArkException& e) {
-        std::cerr << e.what();
-        return 1;
-    }
-
     std::ifstream file(argv[1]);
     try {
-        if(!file) {
-            throw RuntimeException(RuntimeError::FILE_NOT_FOUND, 0, 0, argv[1], "");
-        } 
+        if(argc < 2) throw RuntimeException(RuntimeError::FILE_NOT_PROVIDED, 0, 0, "", "");
+
+        std::string fileName = argv[1];
+        if(fileName.length() < 4 || fileName.substr(fileName.size() - 4) != ".ark") throw RuntimeException(RuntimeError::INVALID_FILE_EXTENSION, 0, 0, fileName, ".ark");
+
+        if(!file) throw RuntimeException(RuntimeError::FILE_NOT_FOUND, 0, 0, argv[1], ""); 
     }
     catch(const ArkException& e) {
         std::cerr << e.what();
-
         return 1;
     }
 

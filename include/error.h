@@ -29,6 +29,7 @@ enum class TypeError {
 };
 
 enum class RuntimeError {
+    INVALID_FILE_EXTENSION,
     FILE_NOT_PROVIDED,
     FILE_NOT_FOUND,
     COLUMN_NOT_FOUND,

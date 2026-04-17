@@ -28,6 +28,7 @@ namespace detail {
 
     const char* toString(RuntimeError code) {
         switch(code) {
+            case RuntimeError::INVALID_FILE_EXTENSION : return "INVALID_FILE_EXTENSION";
             case RuntimeError::FILE_NOT_PROVIDED : return "FILE_NOT_PROVIDED";
             case RuntimeError::FILE_NOT_FOUND : return "FILE_NOT_FOUND";
             case RuntimeError::COLUMN_NOT_FOUND : return "COLUMN_NOT_FOUND";
@@ -228,6 +229,16 @@ const char* RuntimeException::what() const noexcept {
     std::string location = "LINE: " + std::to_string(lineNumber) + ", COLUMN: " + std::to_string(columnNumber) + "\n";
 
     switch(code) {
+        case RuntimeError::INVALID_FILE_EXTENSION : {
+            m_message  = "\n";
+            m_message += DIVIDER;
+            m_message += "RUNTIME ERROR: Invalid file extension\n";
+            m_message += "CODE: E-RUNTIME-" + std::string(detail::toString(code)) + "\n";
+            m_message += "MESSAGE: File '" + errorLexeme + "' must have a '.ark' extension.\n";
+            m_message += location;
+            m_message += DIVIDER;
+            break;
+        }
         case RuntimeError::FILE_NOT_PROVIDED : {
             m_message  = "\n";
             m_message += DIVIDER;
