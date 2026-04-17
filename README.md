@@ -1,6 +1,13 @@
 <div align="center">
 
-<h1>🐘 Ark</h1>
+<pre>
+     █████╗ ██████╗ ██╗  ██╗
+    ██╔══██╗██╔══██╗██║ ██╔╝
+    ███████║██████╔╝█████╔╝ 
+    ██╔══██║██╔══██╗██╔═██╗ 
+    ██║  ██║██║  ██║██║  ██╗
+    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+</pre>
 <h3>A SQL-Like Relational Database Engine, Built From Scratch in C++</h3>
 
 <p>
@@ -13,7 +20,7 @@
 <p>
   <strong>Ark</strong> is a fully self-contained relational database engine and query language interpreter.<br/>
   It parses, validates, and executes a rich SQL-like query language against a typed, in-memory data model —<br/>
-  with support for multi-database management, advanced filtering, and custom disk persistence.
+  with support for multi-database management, aggregate functions, pattern matching, and custom disk persistence.
 </p>
 
 </div>
@@ -39,8 +46,8 @@
 Ark is built **100% from scratch in C++** — no third-party parsing libraries, no embedded engines, no code generators. Every layer of the system is a custom, hand-written implementation:
 
 - **Hand-rolled Lexer & Parser** — A fully custom tokenizer and recursive-descent parser process every query from raw characters to execution-ready form.
-- **Native Execution Engine** — Custom in-memory table structures with strict type validation, multi-condition filtering, pattern matching, and sorting.
-- **Raw Disk Persistence** — Ark serializes and deserializes its own table structures and row data directly to disk using a custom binary format.
+- **Native Execution Engine** — Custom in-memory table structures with strict type validation, multi-condition filtering, pattern matching, sorting, and aggregate computation.
+- **Raw Disk Persistence** — Ark serializes and deserializes its own table structures and row data directly to disk using a custom file format with quote-safe CSV encoding.
 - **Structured Error Diagnostics** — A three-tier exception hierarchy (`Syntax / Type / Runtime`) reports the exact line, column, faulty lexeme, and a descriptive message for every error.
 - **Composition over Inheritance** — Ark's design rigorously favors composition, ensuring loose coupling, high modularity, and clean separation of concerns across all components.
 - **Zero External Dependencies** — No SQLite, no Bison, no Flex. Not a single third-party parsing or database library.
@@ -97,24 +104,37 @@ A raw `.ark` script is transformed into executed data operations through a clean
 - `CREATE DATABASE` / `DROP DATABASE` / `USE` / `SHOW DATABASES`
 - `CREATE TABLE` with typed columns and duplicate-name detection
 - `DROP TABLE` — removes both in-memory state and disk files immediately
+- `TRUNCATE TABLE` — clears all rows while keeping the table structure intact
+- `RENAME TABLE` — renames a table and its underlying files atomically
+- `RENAME COLUMN ... TO ... FROM` — renames a column and persists the updated structure
 - `SHOW TABLES` / `SHOW COLUMNS FROM <table>`
 
 ### Data Manipulation (DML)
 - **Multi-row insertions** with strict per-row type and column-count validation
 - **Column-selective queries** — `SELECT col1, col2` or `SELECT *`
+- **Column aliasing** — `SELECT col AS alias` renames output headers inline
+- **Distinct filtering** — `SELECT DISTINCT` deduplicates result rows
 - **Multi-column updates** — `UPDATE ... SET col1 = v1, col2 = v2 ...`
 - **Targeted or full-table deletions**
+
+### Aggregate Functions
+- `COUNT(*)` / `COUNT(col)` — total rows or non-NULL values in a column
+- `SUM(col)` — sum of numeric values
+- `AVG(col)` — average of numeric values
+- `MIN(col)` / `MAX(col)` — minimum and maximum value in a column
+- All aggregates support an optional `WHERE` clause for filtered computation
 
 ### Advanced Querying & Filtering
 - **Comparison operators** — `==`, `!=`, `<`, `>`, `<=`, `>=`
 - **Logical chaining** — `AND` / `OR` across multiple conditions in a single `WHERE` clause
 - **Pattern matching** — `LIKE` on `STRING` columns with `%word%`, `A%`, `%z` patterns
-- **Sorting** — `ORDER BY <col> ASC | DESC`, fully composable with `WHERE`
-- **Output control** — `LIMIT <n>` on `UPDATE` and `DELETE`
+- **Sorting** — `ORDER BY <col> ASC | DESC`, fully composable with `WHERE` and `DISTINCT`
+- **Output control** — `LIMIT <n>` on `SELECT`, `UPDATE`, and `DELETE`
 
 ### File-Backed Persistence
 - `SAVE` — serializes all tables (structure + row data) to disk
 - `LOAD` — restores a full database from disk back into memory
+- String values are quote-wrapped on save and stripped on load — comma-safe for all string content
 - On startup, `DatabaseManager` auto-discovers all previously created databases under `./databases/`
 
 ---
@@ -148,9 +168,9 @@ LINE: 4, COLUMN: 22
 
 | Category | Prefix | Error Codes |
 |----------|--------|-------------|
-| Syntax | `E-SYNTAX-` | `UNEXPECTED_TOKEN`, `UNRECOGNIZED_DATA_TYPE`, `INVALID_LIKE_PATTERN`, `EXPECTED_STRING_AFTER_LIKE`, `EXPECTED_COMPARISON_OPERATOR`, `UNKNOWN_COMMAND` |
+| Syntax | `E-SYNTAX-` | `UNEXPECTED_TOKEN`, `UNRECOGNIZED_DATA_TYPE`, `UNRECOGNIZED_VALUE`, `INVALID_LIKE_PATTERN`, `EXPECTED_STRING_AFTER_LIKE`, `EXPECTED_COMPARISON_OPERATOR`, `UNKNOWN_CREATE_KEYWORD`, `UNKNOWN_DROP_KEYWORD`, `UNKNOWN_SHOW_KEYWORD`, `UNKNOWN_COMMAND` |
 | Type | `E-TYPE-` | `LIMIT_NOT_INT`, `NEGATIVE_LIMIT`, `LIKE_REQUIRES_STRING`, `INVALID_NUMERIC_LITERAL` |
-| Runtime | `E-RUNTIME-` | `COLUMN_NOT_FOUND`, `TABLE_NOT_FOUND`, `INSERT_TYPE_MISMATCH`, `COLUMN_COUNT_MISMATCH`, `TABLE_ALREADY_EXISTS`, `DUPLICATE_COLUMN_NAME`, `NO_DATABASE_SELECTED`, `NO_DATABASES` |
+| Runtime | `E-RUNTIME-` | `COLUMN_NOT_FOUND`, `TABLE_NOT_FOUND`, `TABLE_ALREADY_EXISTS`, `DUPLICATE_COLUMN_NAME`, `INSERT_TYPE_MISMATCH`, `COLUMN_COUNT_MISMATCH`, `NO_DATABASE_SELECTED`, `NO_DATABASES`, `LIKE_PATTERN_TOO_SHORT`, `FILE_NOT_PROVIDED`, `FILE_NOT_FOUND` |
 
 ---
 
@@ -168,6 +188,9 @@ SHOW DATABASES;
 -- ════════ TABLE COMMANDS ═══════════
 CREATE TABLE <name> (<col> <type>, ...);
 DROP TABLE <name>;
+TRUNCATE TABLE <name>;
+RENAME TABLE <name> TO <new_name>;
+RENAME COLUMN <col> TO <new_col> FROM <table>;
 SHOW TABLES;
 SHOW COLUMNS FROM <table>;
 
@@ -178,11 +201,22 @@ INSERT INTO <table> VALUES (<val>, ...), (<val>, ...);
 -- ════════ DATA QUERIES ═════════════
 SELECT * FROM <table>;
 SELECT <col1>, <col2> FROM <table>;
+SELECT <col> AS <alias> FROM <table>;
+SELECT DISTINCT <col> FROM <table>;
 SELECT * FROM <table> WHERE <col> == <val>;
 SELECT * FROM <table> WHERE <col> > <val> AND <col2> != <val2>;
 SELECT * FROM <table> WHERE <col> LIKE "%word%";
 SELECT * FROM <table> ORDER BY <col> ASC;
 SELECT * FROM <table> WHERE <col> > <val> ORDER BY <col2> DESC;
+SELECT DISTINCT <col> FROM <table> ORDER BY <col> ASC;
+
+-- ════════ AGGREGATE FUNCTIONS ══════
+COUNT(*) FROM <table>;
+COUNT(<col>) FROM <table> WHERE <col2> == <val>;
+SUM(<col>) FROM <table>;
+AVG(<col>) FROM <table> WHERE <col2> > <val>;
+MIN(<col>) FROM <table>;
+MAX(<col>) FROM <table>;
 
 -- ════════ DATA UPDATES ═════════════
 UPDATE <table> SET <col> = <val>;
@@ -208,7 +242,7 @@ Ark/
 ├── databases/                   # Auto-generated directory for persisted database files
 │   └── <dbname>/
 │       ├── tables/              # .tbl files — column name/type definitions per table
-│       ├── data/                # .dat files — CSV row data per table
+│       ├── data/                # .dat files — quote-safe CSV row data per table
 │       └── tables.meta          # Registry of table names for this database
 │
 ├── include/                     # Header files
@@ -274,7 +308,9 @@ SELECT * FROM students ORDER BY grade DESC;
 
 DELETE FROM students WHERE grade < 60.0;
 
-SELECT name, grade FROM students WHERE enrolled == TRUE ORDER BY grade DESC;
+SELECT name AS student_name, grade FROM students WHERE enrolled == TRUE ORDER BY grade DESC;
+
+COUNT(*) FROM students;
 
 SAVE;
 ```
@@ -282,22 +318,28 @@ SAVE;
 **Output:**
 
 ```
-+----+---------+-------+----------+
-| id | name    | grade | enrolled |
-+----+---------+-------+----------+
-|  1 | Alice   | 95.5  | true     |
-|  4 | Diana   | 88.7  | true     |
-|  2 | Bob     | 74.0  | true     |
-|  3 | Charlie | 58.2  | false    |
-+----+---------+-------+----------+
++----+---------+----------+----------+
+| id | name    | grade    | enrolled |
++----+---------+----------+----------+
+| 1  | Alice   | 95.5     | true     |
+| 4  | Diana   | 88.7     | true     |
+| 2  | Bob     | 74.0     | true     |
+| 3  | Charlie | 58.2     | false    |
++----+---------+----------+----------+
 
-+-------+-------+
-| name  | grade |
-+-------+-------+
-| Alice | 95.5  |
-| Diana | 88.7  |
-| Bob   | 74.0  |
-+-------+-------+
++--------------+----------+
+| student_name | grade    |
++--------------+----------+
+| Alice        | 95.5     |
+| Diana        | 88.7     |
+| Bob          | 74.0     |
++--------------+----------+
+
++----------+
+| COUNT(*) |
++----------+
+| 3        |
++----------+
 
 Database saved.
 ```
