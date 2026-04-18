@@ -622,7 +622,12 @@ void Parser::parseSelect(DatabaseManager& manager) {
     checkNotNull(table, tableName);
 
     if(match(TokenType::TOK_JOIN) || match(TokenType::TOK_INNER)) {
-        parseJoin(db, table, selectedColumns, selectAll);
+        parseInnerJoin(db, table, selectedColumns, selectAll);
+        return;
+    }
+
+    if(match(TokenType::TOK_LEFT)) {
+        parseLeftJoin(db, table, selectedColumns, selectAll);
         return;
     }
 
@@ -665,7 +670,7 @@ void Parser::parseSelect(DatabaseManager& manager) {
     printTableResult(table, columnIndexes, whereRows, alias ? aliasColumnNames : std::vector<std::string>{}, distinct);
 }
 
-void Parser::parseJoin(Database* db, Table* table1, const std::vector<std::string>& selectedColumns, bool selectAll) {
+void Parser::parseInnerJoin(Database* db, Table* table1, const std::vector<std::string>& selectedColumns, bool selectAll) {
 
     if(match(TokenType::TOK_JOIN)) consume(TokenType::TOK_JOIN);
     else if(match(TokenType::TOK_INNER)) {
@@ -741,6 +746,120 @@ void Parser::parseJoin(Database* db, Table* table1, const std::vector<std::strin
 
                 result->insertRow(newRow);
             }
+        }
+    }
+
+    std::vector<int> columnIndexes;
+
+    if(selectAll) {
+        for(int i = 0; i < result->getColumnCount(); i++) {
+            columnIndexes.push_back(i);
+        }
+    }
+    else {
+        for(const std::string& colName : selectedColumns) {
+
+            int idx = getColumnIndex(result, colName);
+
+            if(idx == -1) {
+                std::cerr << "Column " << colName << " not found\n";
+                return;
+            }
+
+            columnIndexes.push_back(idx);
+        }
+    }
+
+    printTableResult(result, columnIndexes, {}, {}, false);
+}
+
+void Parser::parseLeftJoin(Database* db, Table* table1, const std::vector<std::string>& selectedColumns, bool selectAll) {
+    consume(TokenType::TOK_LEFT);
+    consume(TokenType::TOK_JOIN);
+
+    std::string table2Name = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+
+    Table* table2 = db->getTable(table2Name);
+    checkNotNull(table2, table2Name);
+
+    consume(TokenType::TOK_ON);
+
+    std::string t1Name = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+    consume(TokenType::TOK_DOT);
+
+    std::string col1 = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+    
+    consume(TokenType::TOK_EQUAL);
+
+    std::string t2Name = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+    consume(TokenType::TOK_DOT);
+
+    std::string col2 = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+
+    if(t1Name != table1->getName() || t2Name != table2Name) {
+        std::cerr << "Table name mismatch in LEFT JOIN\n";
+        return;
+    }
+
+    int col1Index = getColumnIndex(table1, col1);
+    int col2Index = getColumnIndex(table2, col2);
+
+    if(col1Index == -1 || col2Index == -1) {
+        std::cerr << "Column not found in LEFT JOIN\n";
+        return;
+    }
+
+    std::vector<Row> rows1 = table1->selectAll();
+    std::vector<Row> rows2 = table2->selectAll();
+
+    Table tempTable("result");
+    Table* result = &tempTable;
+
+    for(int i = 0; i < table1->getColumnCount(); i++) result->addColumn(table1->getColumn(i));
+
+    for(int i = 0; i < table2->getColumnCount(); i++) result->addColumn(table2->getColumn(i));
+
+    for(int i = 0; i < (int)rows1.size(); i++) {
+
+        bool matched = false;
+
+        for(int j = 0; j < (int)rows2.size(); j++) {
+
+            if(rows1[i].getCell(col1Index) == rows2[j].getCell(col2Index)) {
+
+                Row newRow;
+
+                for(int c = 0; c < table1->getColumnCount(); c++) {
+                    newRow.addCell(rows1[i].getCell(c));
+                }
+
+                for(int c = 0; c < table2->getColumnCount(); c++) {
+                    newRow.addCell(rows2[j].getCell(c));
+                }
+
+                result->insertRow(newRow);
+
+                matched = true;
+            }
+        }
+
+        if(!matched) {
+            Row newRow;
+
+            for(int c = 0; c < table1->getColumnCount(); c++) {
+                newRow.addCell(rows1[i].getCell(c));
+            }
+
+            for(int c = 0; c < table2->getColumnCount(); c++) {
+                newRow.addCell(Cell());
+            }
+
+            result->insertRow(newRow);
         }
     }
 

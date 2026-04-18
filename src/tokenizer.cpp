@@ -35,6 +35,7 @@ static const std::unordered_map<std::string, TokenType> KeywordTable = {
     {"TO",        TokenType::TOK_TO},
     {"JOIN",      TokenType::TOK_JOIN},
     {"INNER",     TokenType::TOK_INNER},
+    {"LEFT",      TokenType::TOK_LEFT},
     {"ON",        TokenType::TOK_ON},
     {"ASC",       TokenType::TOK_ASC},
     {"DESC",      TokenType::TOK_DESC},

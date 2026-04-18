@@ -7,21 +7,56 @@ CREATE TABLE marks (id INT, score INT);
 INSERT INTO students VALUES (1, "A"), (2, "B"), (3, "C");
 INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
 
--- basic join (select all)
-SELECT * FROM students JOIN marks ON students.id = marks.id;
+-- 1. Basic LEFT JOIN (one unmatched left row)
+SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
 
--- select specific columns
-SELECT name, score FROM students JOIN marks ON students.id = marks.id;
+-- Expected:
+-- 1 A 1 90
+-- 2 B 2 80
+-- 3 C NULL NULL
 
--- different column order
-SELECT score, name FROM students JOIN marks ON students.id = marks.id;
 
--- no matching rows
-SELECT * FROM students JOIN marks ON students.id = marks.score;
+-- 2. Column selection test
+SELECT name, score FROM students LEFT JOIN marks ON students.id = marks.id;
 
--- error case (invalid column)
-SELECT * FROM students JOIN marks ON students.id = marks.xyz;
+-- Expected:
+-- A 90
+-- B 80
+-- C NULL
 
--- duplicate join test
-INSERT INTO students VALUES (1, "X");
-SELECT * FROM students JOIN marks ON students.id = marks.id;
+
+-- 3. No matches at all
+DELETE FROM marks;
+INSERT INTO marks VALUES (5, 50);
+
+SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+
+-- Expected:
+-- 1 A NULL NULL
+-- 2 B NULL NULL
+-- 3 C NULL NULL
+
+
+-- 4. Multiple matches (important case)
+DELETE FROM marks;
+INSERT INTO marks VALUES (1, 90), (1, 95), (2, 80);
+
+SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+
+-- Expected:
+-- 1 A 1 90
+-- 1 A 1 95
+-- 2 B 2 80
+-- 3 C NULL NULL
+
+
+-- 5. All rows match (should behave like INNER JOIN)
+DELETE FROM marks;
+INSERT INTO marks VALUES (1, 90), (2, 80), (3, 70);
+
+SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+
+-- Expected:
+-- 1 A 1 90
+-- 2 B 2 80
+-- 3 C 3 70

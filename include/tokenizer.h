@@ -52,6 +52,7 @@ enum class TokenType {
     TOK_DESC,              // DASCEDNING
     TOK_JOIN,              // JOIN
     TOK_INNER,             // INNER
+    TOK_LEFT,              // LEFT
     TOK_ON,                // ON
 
     // ----- Aggreate Functions -----
