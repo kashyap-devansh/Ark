@@ -119,6 +119,7 @@ private :
     ValidationResult validateRow(const Row& row) const;
 
 public :
+    Table(const std::string& name);
     Table(const std::string& name, const std::string& structurePath, const std::string& dataPath);
 
     std::string getName() const;

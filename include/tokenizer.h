@@ -50,6 +50,9 @@ enum class TokenType {
     TOK_TO,                // TO
     TOK_ASC,               // ASCENDING
     TOK_DESC,              // DASCEDNING
+    TOK_JOIN,              // JOIN
+    TOK_INNER,             // INNER
+    TOK_ON,                // ON
 
     // ----- Aggreate Functions -----
     TOK_COUNT,             // COUNT 
@@ -82,6 +85,7 @@ enum class TokenType {
     TOK_COMMA,             // ,
     TOK_STAR,              // *
     TOK_SEMICOLON,         // ;
+    TOK_DOT,               // .
 
     // ----- End Marker -----
     TOK_END_OF_FILE,

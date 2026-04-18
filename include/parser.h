@@ -25,6 +25,7 @@ private :
     void parseUpdate(DatabaseManager& manager);
     void parseDelete(DatabaseManager& manager);
     void parseTruncate(DatabaseManager& manager);
+    void parseJoin(Database* db, Table* table1, const std::vector<std::string>& selectedColumns, bool selectAll);
 
     void parseRename(DatabaseManager& manager);
     void parseShowTables(DatabaseManager& manager);

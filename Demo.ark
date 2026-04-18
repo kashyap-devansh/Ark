@@ -1,35 +1,27 @@
 CREATE DATABASE testdb;
 USE testdb;
 
-CREATE TABLE users (
-    id INT,
-    name STRING,
-    age INT
-);
+CREATE TABLE students (id INT, name STRING);
+CREATE TABLE marks (id INT, score INT);
 
-SHOW COLUMNS FROM users;
+INSERT INTO students VALUES (1, "A"), (2, "B"), (3, "C");
+INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
 
-INSERT INTO users VALUES (1, "Alice", 20);
-INSERT INTO users VALUES (2, "Bob", 25);
+-- basic join (select all)
+SELECT * FROM students JOIN marks ON students.id = marks.id;
 
-SELECT * FROM users;
+-- select specific columns
+SELECT name, score FROM students JOIN marks ON students.id = marks.id;
 
-RENAME COLUMN name TO full_name FROM users;
+-- different column order
+SELECT score, name FROM students JOIN marks ON students.id = marks.id;
 
-SHOW COLUMNS FROM users;
+-- no matching rows
+SELECT * FROM students JOIN marks ON students.id = marks.score;
 
+-- error case (invalid column)
+SELECT * FROM students JOIN marks ON students.id = marks.xyz;
 
-
-SELECT full_name FROM users;
-
-SELECT id, full_name, age FROM users;
-
--- =========================
--- EDGE CASES
--- =========================
-
--- rename non-existing column (should fail)
-RENAME COLUMN unknown TO test FROM users;
-
--- rename to existing column name (should fail)
-RENAME COLUMN age TO id FROM users;
+-- duplicate join test
+INSERT INTO students VALUES (1, "X");
+SELECT * FROM students JOIN marks ON students.id = marks.id;

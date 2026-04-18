@@ -233,6 +233,7 @@ std::string Row::toString() const {
 
 //====================================================================== TABLE ======================================================================
 
+Table::Table(const std::string& name) : tableName(name) {};
 Table::Table(const std::string& name, const std::string& structurePath, const std::string& dataPath) : tableName(name), structureFilePath(structurePath), dataFilePath(dataPath) {}
 
 std::string Table::getName() const {

@@ -33,6 +33,9 @@ static const std::unordered_map<std::string, TokenType> KeywordTable = {
     {"ORDER",     TokenType::TOK_ORDER},
     {"BY",        TokenType::TOK_BY},
     {"TO",        TokenType::TOK_TO},
+    {"JOIN",      TokenType::TOK_JOIN},
+    {"INNER",     TokenType::TOK_INNER},
+    {"ON",        TokenType::TOK_ON},
     {"ASC",       TokenType::TOK_ASC},
     {"DESC",      TokenType::TOK_DESC},
     {"COUNT",     TokenType::TOK_COUNT},
@@ -200,6 +203,7 @@ Token Tokenizer::nextToken() {
         case ',' : return Token(TokenType::TOK_COMMA, ",", tokenLine, tokenColumn);
         case '*' : return Token(TokenType::TOK_STAR, "*", tokenLine, tokenColumn);
         case ';' : return Token(TokenType::TOK_SEMICOLON, ";", tokenLine, tokenColumn);
+        case '.' : return Token(TokenType::TOK_DOT, ".", tokenLine, tokenColumn);
     }
 
     return Token(TokenType::UNKOWN, std::string(1, ch), tokenLine, tokenColumn);
