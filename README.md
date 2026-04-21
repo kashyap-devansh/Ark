@@ -191,14 +191,14 @@ All aggregates support an optional `WHERE` clause for filtered computation.
 
 Every error pinpoints the exact location and cause:
 
-```diff
+```
 - RUNTIME ERROR: Column not found
 - CODE: E-RUNTIME-COLUMN_NOT_FOUND
 - MESSAGE: Column 'scroe' does not exist in Table 'users'.
 - LINE: 4, COLUMN: 22
 ```
 
-```diff
+```
 - SYNTAX ERROR: Unexpected token
 - CODE: E-SYNTAX-UNEXPECTED_TOKEN
 - MESSAGE: Unexpected token 'FORM', expected 'FROM'.
