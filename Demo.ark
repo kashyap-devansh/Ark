@@ -7,56 +7,61 @@ CREATE TABLE marks (id INT, score INT);
 INSERT INTO students VALUES (1, "A"), (2, "B"), (3, "C");
 INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
 
--- 1. Basic LEFT JOIN (one unmatched left row)
-SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
 
 -- Expected:
 -- 1 A 1 90
 -- 2 B 2 80
--- 3 C NULL NULL
+-- NULL NULL 4 70
 
 
 -- 2. Column selection test
-SELECT name, score FROM students LEFT JOIN marks ON students.id = marks.id;
+SELECT name, score FROM students RIGHT JOIN marks ON students.id = marks.id;
 
 -- Expected:
 -- A 90
 -- B 80
--- C NULL
+-- NULL 70
 
 
 -- 3. No matches at all
-DELETE FROM marks;
-INSERT INTO marks VALUES (5, 50);
+DELETE FROM students;
+INSERT INTO students VALUES (5, "X");
 
-SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
 
 -- Expected:
--- 1 A NULL NULL
--- 2 B NULL NULL
--- 3 C NULL NULL
+-- NULL NULL 1 90
+-- NULL NULL 2 80
+-- NULL NULL 4 70
 
 
 -- 4. Multiple matches (important case)
-DELETE FROM marks;
-INSERT INTO marks VALUES (1, 90), (1, 95), (2, 80);
+DELETE FROM students;
+INSERT INTO students VALUES (1, "A"), (1, "A2"), (2, "B");
 
-SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+DELETE FROM marks;
+INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
+
+SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
 
 -- Expected:
 -- 1 A 1 90
--- 1 A 1 95
+-- 1 A2 1 90
 -- 2 B 2 80
--- 3 C NULL NULL
+-- NULL NULL 4 70
 
 
 -- 5. All rows match (should behave like INNER JOIN)
-DELETE FROM marks;
-INSERT INTO marks VALUES (1, 90), (2, 80), (3, 70);
+DELETE FROM students;
+INSERT INTO students VALUES (1, "A"), (2, "B"), (4, "D");
 
-SELECT * FROM students LEFT JOIN marks ON students.id = marks.id;
+DELETE FROM marks;
+INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
+
+SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
 
 -- Expected:
 -- 1 A 1 90
 -- 2 B 2 80
--- 3 C 3 70
+-- 4 D 4 70

@@ -53,6 +53,7 @@ enum class TokenType {
     TOK_JOIN,              // JOIN
     TOK_INNER,             // INNER
     TOK_LEFT,              // LEFT
+    TOK_RIGHT,             // RIGHT
     TOK_ON,                // ON
 
     // ----- Aggreate Functions -----
