@@ -7,61 +7,27 @@ CREATE TABLE marks (id INT, score INT);
 INSERT INTO students VALUES (1, "A"), (2, "B"), (3, "C");
 INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
 
-SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
+SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
 
--- Expected:
--- 1 A 1 90
--- 2 B 2 80
--- NULL NULL 4 70
+SELECT name, score FROM students FULL OUTER JOIN marks ON students.id = marks.id;
 
-
--- 2. Column selection test
-SELECT name, score FROM students RIGHT JOIN marks ON students.id = marks.id;
-
--- Expected:
--- A 90
--- B 80
--- NULL 70
-
-
--- 3. No matches at all
 DELETE FROM students;
 INSERT INTO students VALUES (5, "X");
 
-SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
+SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
 
--- Expected:
--- NULL NULL 1 90
--- NULL NULL 2 80
--- NULL NULL 4 70
-
-
--- 4. Multiple matches (important case)
 DELETE FROM students;
 INSERT INTO students VALUES (1, "A"), (1, "A2"), (2, "B");
 
 DELETE FROM marks;
 INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
 
-SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
+SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
 
--- Expected:
--- 1 A 1 90
--- 1 A2 1 90
--- 2 B 2 80
--- NULL NULL 4 70
-
-
--- 5. All rows match (should behave like INNER JOIN)
 DELETE FROM students;
 INSERT INTO students VALUES (1, "A"), (2, "B"), (4, "D");
 
 DELETE FROM marks;
 INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
 
-SELECT * FROM students RIGHT JOIN marks ON students.id = marks.id;
-
--- Expected:
--- 1 A 1 90
--- 2 B 2 80
--- 4 D 4 70
+SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;

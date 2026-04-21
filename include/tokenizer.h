@@ -54,6 +54,8 @@ enum class TokenType {
     TOK_INNER,             // INNER
     TOK_LEFT,              // LEFT
     TOK_RIGHT,             // RIGHT
+    TOK_FULL,              // FULL
+    TOK_OUTER,            // OUTTER
     TOK_ON,                // ON
 
     // ----- Aggreate Functions -----
