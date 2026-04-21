@@ -1,24 +1,26 @@
 <div align="center">
 
-```
+<pre>
      █████╗ ██████╗ ██╗  ██╗
     ██╔══██╗██╔══██╗██║ ██╔╝
     ███████║██████╔╝█████╔╝ 
     ██╔══██║██╔══██╗██╔═██╗ 
     ██║  ██║██║  ██║██║  ██╗
     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-```
+</pre>
 
-### A SQL-Like Relational Database Engine, Built From Scratch in C++
+<h3>A SQL-Like Relational Database Engine, Built From Scratch in C++</h3>
 
 [![C++17](https://img.shields.io/badge/C++-17-00599C?style=flat-square&logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active-22c55e?style=flat-square)]()
 [![Dependencies](https://img.shields.io/badge/Dependencies-Zero-f97316?style=flat-square)]()
 
-**Ark** is a fully self-contained relational database engine and query language interpreter.  
-It parses, validates, and executes a rich SQL-like query language against a typed, in-memory data model —  
+<p>
+<strong>Ark</strong> is a fully self-contained relational database engine and query language interpreter.<br/>
+It parses, validates, and executes a rich SQL-like query language against a typed, in-memory data model —<br/>
 with support for multi-database management, multi-table joins, aggregate functions, pattern matching, and custom disk persistence.
+</p>
 
 </div>
 
@@ -189,20 +191,18 @@ All aggregates support an optional `WHERE` clause for filtered computation.
 
 Every error pinpoints the exact location and cause:
 
+```diff
+- RUNTIME ERROR: Column not found
+- CODE: E-RUNTIME-COLUMN_NOT_FOUND
+- MESSAGE: Column 'scroe' does not exist in Table 'users'.
+- LINE: 4, COLUMN: 22
 ```
------------------------------------------------------------
-SYNTAX ERROR: Unexpected token
-CODE: E-SYNTAX-UNEXPECTED_TOKEN
-MESSAGE: Unexpected token 'FORM', expected 'FROM'.
-LINE: 3, COLUMN: 15
------------------------------------------------------------
 
------------------------------------------------------------
-RUNTIME ERROR: Column not found
-CODE: E-RUNTIME-COLUMN_NOT_FOUND
-MESSAGE: Column 'scroe' does not exist in Table 'users'.
-LINE: 4, COLUMN: 22
------------------------------------------------------------
+```diff
+- SYNTAX ERROR: Unexpected token
+- CODE: E-SYNTAX-UNEXPECTED_TOKEN
+- MESSAGE: Unexpected token 'FORM', expected 'FROM'.
+- LINE: 3, COLUMN: 15
 ```
 
 **Full error code reference:**
@@ -263,122 +263,127 @@ LINE: 4, COLUMN: 22
 
 All statements end with `;`. Line comments start with `--`.
 
-```sql
--- ══════════════════════════════════════
---  DATABASE
--- ══════════════════════════════════════
+### 🗄️ Database & Table
 
-CREATE DATABASE <n>;
-DROP DATABASE <n>;
-USE <n>;
+```sql
+-- Database
+CREATE DATABASE school;
+DROP DATABASE school;
+USE school;
 SHOW DATABASES;
 
-
--- ══════════════════════════════════════
---  TABLES
--- ══════════════════════════════════════
-
-CREATE TABLE <n> (<col> <type>, ...);
-DROP TABLE <n>;
-TRUNCATE TABLE <n>;
-RENAME TABLE <n> TO <new_name>;
-RENAME COLUMN <col> TO <new_col> FROM <table>;
+-- Table
+CREATE TABLE students (id INT, name STRING, grade DOUBLE, enrolled BOOL);
+DROP TABLE students;
+TRUNCATE TABLE students;
+RENAME TABLE students TO learners;
+RENAME COLUMN grade TO score FROM students;
 SHOW TABLES;
-SHOW COLUMNS FROM <table>;
+SHOW COLUMNS FROM students;
+```
 
+### ✏️ Insert
 
--- ══════════════════════════════════════
---  INSERT
--- ══════════════════════════════════════
+```sql
+-- Single row
+INSERT INTO students VALUES (1, "Alice", 95.5, TRUE);
 
-INSERT INTO <table> VALUES (<val>, ...);
-INSERT INTO <table> VALUES (<val>, ...), (<val>, ...);   -- multi-row
+-- Multi-row
+INSERT INTO students VALUES
+    (1, "Alice",   95.5, TRUE),
+    (2, "Bob",     74.0, TRUE),
+    (3, "Charlie", 58.2, FALSE);
+```
 
+### 🔍 Select & Filter
 
--- ══════════════════════════════════════
---  SELECT
--- ══════════════════════════════════════
+```sql
+SELECT * FROM students;
+SELECT id, name FROM students;
+SELECT name AS student_name, grade AS score FROM students;
+SELECT DISTINCT grade FROM students;
 
-SELECT * FROM <table>;
-SELECT <col1>, <col2> FROM <table>;
-SELECT <col> AS <alias> FROM <table>;
-SELECT DISTINCT <col> FROM <table>;
+-- WHERE with comparisons
+SELECT * FROM students WHERE grade > 80.0;
+SELECT * FROM students WHERE enrolled == TRUE AND grade >= 90.0;
+SELECT * FROM students WHERE grade < 60.0 OR enrolled == FALSE;
+
+-- LIKE pattern matching
+SELECT * FROM students WHERE name LIKE "A%";
+SELECT * FROM students WHERE name LIKE "%ice";
+SELECT * FROM students WHERE name LIKE "%li%";
+
+-- ORDER BY
+SELECT * FROM students ORDER BY grade ASC;
+SELECT * FROM students ORDER BY grade DESC;
+
+-- Combined
+SELECT DISTINCT name AS student_name
+    FROM students
+    WHERE enrolled == TRUE
+    ORDER BY grade DESC
+    LIMIT 5;
+```
+
+### 🔗 Joins
+
+```sql
+-- INNER JOIN  — matched rows only
+SELECT * FROM students INNER JOIN clubs ON students.id = clubs.student_id;
+
+-- LEFT JOIN   — all students, NULLs for unmatched clubs
+SELECT * FROM students LEFT JOIN clubs ON students.id = clubs.student_id;
+
+-- RIGHT JOIN  — all clubs, NULLs for unmatched students
+SELECT * FROM students RIGHT JOIN clubs ON students.id = clubs.student_id;
+
+-- FULL JOIN   — all rows from both tables
+SELECT * FROM students FULL JOIN       clubs ON students.id = clubs.student_id;
+SELECT * FROM students FULL OUTER JOIN clubs ON students.id = clubs.student_id;
+
+-- Column-selective join
+SELECT name, club FROM students INNER JOIN clubs ON students.id = clubs.student_id;
+```
+
+> `WHERE`, `ORDER BY`, and `LIMIT` are not supported after a `JOIN`.
+
+### 📊 Aggregates
+
+```sql
+COUNT(*)             FROM students;
+COUNT(name)          FROM students;
+SUM(grade)           FROM students;
+AVG(grade)           FROM students;
+MIN(grade)           FROM students;
+MAX(grade)           FROM students;
 
 -- with WHERE
-SELECT * FROM <table> WHERE <col> == <val>;
-SELECT * FROM <table> WHERE <col> > <val> AND <col2> != <val2>;
-SELECT * FROM <table> WHERE <col> LIKE "%word%";
+COUNT(*) FROM students WHERE enrolled == TRUE;
+AVG(grade) FROM students WHERE grade > 60.0;
+```
 
--- with ORDER BY
-SELECT * FROM <table> ORDER BY <col> ASC;
-SELECT * FROM <table> ORDER BY <col> DESC;
+### ✏️ Update & Delete
 
--- combined
-SELECT DISTINCT <col> AS <alias>
-    FROM <table>
-    WHERE <col2> > <val>
-    ORDER BY <col> ASC
-    LIMIT <n>;
+```sql
+-- UPDATE
+UPDATE students SET enrolled = FALSE;
+UPDATE students SET grade = 100.0, enrolled = TRUE;
+UPDATE students SET grade = 0.0 WHERE enrolled == FALSE;
+UPDATE students SET grade = 0.0 WHERE grade < 50.0 LIMIT 3;
 
+-- DELETE
+DELETE FROM students;
+DELETE FROM students WHERE grade < 60.0;
+DELETE FROM students WHERE enrolled == FALSE OR grade < 50.0;
+DELETE FROM students WHERE grade < 60.0 LIMIT 2;
+```
 
--- ══════════════════════════════════════
---  JOINS
--- ══════════════════════════════════════
+### 💾 Persistence
 
--- Supports SELECT * and column-selective queries.
--- WHERE / ORDER BY / LIMIT are not supported after a JOIN.
-
-SELECT * FROM <t1> INNER JOIN      <t2> ON <t1>.<col> = <t2>.<col>;
-SELECT * FROM <t1> LEFT JOIN       <t2> ON <t1>.<col> = <t2>.<col>;
-SELECT * FROM <t1> RIGHT JOIN      <t2> ON <t1>.<col> = <t2>.<col>;
-SELECT * FROM <t1> FULL JOIN       <t2> ON <t1>.<col> = <t2>.<col>;
-SELECT * FROM <t1> FULL OUTER JOIN <t2> ON <t1>.<col> = <t2>.<col>;
-
-SELECT <col1>, <col2> FROM <t1> INNER JOIN <t2> ON <t1>.<col> = <t2>.<col>;
-
-
--- ══════════════════════════════════════
---  AGGREGATES
--- ══════════════════════════════════════
-
-COUNT(*)     FROM <table>;
-COUNT(<col>) FROM <table>;
-SUM(<col>)   FROM <table>;
-AVG(<col>)   FROM <table>;
-MIN(<col>)   FROM <table>;
-MAX(<col>)   FROM <table>;
-
--- all aggregates accept an optional WHERE clause:
-COUNT(*) FROM <table> WHERE <col> == <val>;
-AVG(<col>) FROM <table> WHERE <col2> > <val>;
-
-
--- ══════════════════════════════════════
---  UPDATE
--- ══════════════════════════════════════
-
-UPDATE <table> SET <col> = <val>;
-UPDATE <table> SET <col> = <val>, <col2> = <val2>;
-UPDATE <table> SET <col> = <val> WHERE <col2> == <val2>;
-UPDATE <table> SET <col> = <val> WHERE <col2> > <val2> LIMIT <n>;
-
-
--- ══════════════════════════════════════
---  DELETE
--- ══════════════════════════════════════
-
-DELETE FROM <table>;
-DELETE FROM <table> WHERE <col> == <val>;
-DELETE FROM <table> WHERE <col> > <val> OR <col2> <= <val2>;
-DELETE FROM <table> WHERE <col> == <val> LIMIT <n>;
-
-
--- ══════════════════════════════════════
---  PERSISTENCE
--- ══════════════════════════════════════
-
-SAVE;
-LOAD;
+```bash
+# Inside a .ark script:
+SAVE;   # serialize all tables to disk
+LOAD;   # restore database from disk
 ```
 
 ---
@@ -454,22 +459,17 @@ INSERT INTO students VALUES
 INSERT INTO clubs VALUES
     (1, "Chess"), (2, "Chess"), (4, "Drama");
 
--- Sort all students by grade
 SELECT * FROM students ORDER BY grade DESC;
 
--- Remove failing students
 DELETE FROM students WHERE grade < 60.0;
 
--- Aliased output with filtering
 SELECT name AS student_name, grade
     FROM students
     WHERE enrolled == TRUE
     ORDER BY grade DESC;
 
--- Join students with their clubs
 SELECT * FROM students INNER JOIN clubs ON students.id = clubs.student_id;
 
--- Aggregates
 COUNT(*) FROM students;
 AVG(grade) FROM students;
 
