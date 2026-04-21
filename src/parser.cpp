@@ -1000,7 +1000,7 @@ void Parser::parseRightJoin(Database* db, Table* table1, const std::vector<std::
 
 void Parser::parseOutterJoin(Database* db, Table* table1, const std::vector<std::string>& selectedColumns, bool selectAll) {
     consume(TokenType::TOK_FULL);
-    consume(TokenType::TOK_OUTER);
+    if(match(TokenType::TOK_OUTER)) consume(TokenType::TOK_OUTER);
     consume(TokenType::TOK_JOIN);
 
     std::string table2Name = current.getLexeme();
