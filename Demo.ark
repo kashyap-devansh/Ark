@@ -1,33 +1,32 @@
+-- Setup
 CREATE DATABASE testdb;
 USE testdb;
 
-CREATE TABLE students (id INT, name STRING);
-CREATE TABLE marks (id INT, score INT);
+CREATE TABLE employees (
+    id INT,
+    name STRING,
+    age INT
+);
 
-INSERT INTO students VALUES (1, "A"), (2, "B"), (3, "C");
-INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
+-- Insert some rows before altering
+INSERT INTO employees VALUES (1, "Alice", 30), (2, "Bob", 25), (3, "Charlie", 35);
 
-SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
+-- Check before
+SELECT * FROM employees;
 
-SELECT name, score FROM students FULL OUTER JOIN marks ON students.id = marks.id;
+-- This is what you're about to implement:
+ALTER TABLE employees ADD COLUMN salary DOUBLE;
 
-DELETE FROM students;
-INSERT INTO students VALUES (5, "X");
+-- After adding the column, existing rows should have NULL for salary
+SELECT * FROM employees;
 
-SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
+-- Insert a new row that includes the new column
+INSERT INTO employees VALUES (4, "Diana", 28, 150000.0);
 
-DELETE FROM students;
-INSERT INTO students VALUES (1, "A"), (1, "A2"), (2, "B");
+SELECT * FROM employees;
 
-DELETE FROM marks;
-INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
+ALTER TABLE employees DROP COLUMN salary;
 
-SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
+SELECT * FROM employees;
 
-DELETE FROM students;
-INSERT INTO students VALUES (1, "A"), (2, "B"), (4, "D");
-
-DELETE FROM marks;
-INSERT INTO marks VALUES (1, 90), (2, 80), (4, 70);
-
-SELECT * FROM students FULL OUTER JOIN marks ON students.id = marks.id;
+SAVE;

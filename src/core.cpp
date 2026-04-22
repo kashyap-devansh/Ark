@@ -219,6 +219,10 @@ int Row::getCellCount() const {
     return static_cast<int>(cells.size());
 }
 
+void Row::dropCell(int index) {
+    cells.erase(cells.begin() + index);
+}
+
 std::string Row::toString() const {
     std::string result;
 
@@ -262,6 +266,10 @@ std::string Table::getColumName(int index) const {
 
 DataType Table::getColumnType(int index) const {
     return columns.at(index).getType();
+}
+
+void Table::dropColumn(int index) {
+    columns.erase(columns.begin() + index);
 }
 
 int Table::getRowCount() const {

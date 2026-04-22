@@ -233,6 +233,7 @@ void Parser::parse(DatabaseManager& manager) {
         case TokenType::TOK_DROP : parseDrop(manager); break;
         case TokenType::TOK_USE : parseUse(manager); break;
         case TokenType::TOK_SHOW : parseShow(manager); break;
+        case TokenType::TOK_ALTER : parseAlter(manager); break;
         case TokenType::TOK_INSERT : parseInsert(manager); break;
         case TokenType::TOK_SELECT : parseSelect(manager); break;
         case TokenType::TOK_UPDATE : parseUpdate(manager); break;
@@ -564,6 +565,49 @@ void Parser::parseInsert(DatabaseManager& manager) {
 
     consume(TokenType::TOK_SEMICOLON);
 }
+
+void Parser::parseAlter(DatabaseManager& manager) {
+    consume(TokenType::TOK_ALTER);
+    consume(TokenType::TOK_TABLE);
+
+    std::string tableName = current.getLexeme();
+    consume(TokenType::TOK_IDENTIFIER);
+
+    Database* db = manager.getCurrentDatabase();
+    if(!db) return;
+
+    Table* table = db->getTable(tableName);
+    checkNotNull(table, tableName);
+
+    if(match(TokenType::TOK_ADD)) {
+        consume(TokenType::TOK_ADD);
+        consume(TokenType::TOK_COLUMN);
+
+        std::string ColumnName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        DataType type = parseDataType();
+        table->addColumn(Column(ColumnName, type));
+
+        int columnIndex = getColumnIndex(table, ColumnName);
+
+        for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->addCell(Cell());
+    }
+    else if(match(TokenType::TOK_DROP)) {
+        consume(TokenType::TOK_DROP);
+        consume(TokenType::TOK_COLUMN);
+
+        std::string ColumnName = current.getLexeme();
+        consume(TokenType::TOK_IDENTIFIER);
+
+        int columnIndex = getColumnIndex(table, ColumnName);
+
+        for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->dropCell(columnIndex);
+
+        table->dropColumn(columnIndex);
+    }
+}
+
 
 void Parser::parseSelect(DatabaseManager& manager) {
     consume(TokenType::TOK_SELECT);

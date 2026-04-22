@@ -102,6 +102,8 @@ public :
 
     int getCellCount() const;
 
+    void dropCell(int index);
+
     std::string toString() const;
 };
 
@@ -131,6 +133,7 @@ public :
     int getColumnCount() const;
     std::string getColumName(int index) const;
     DataType getColumnType(int index) const;
+    void dropColumn(int index);
 
     int getRowCount() const;
 
