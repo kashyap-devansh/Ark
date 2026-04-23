@@ -607,6 +607,9 @@ void Parser::parseAlter(DatabaseManager& manager) {
     }
     else throw SyntaxException(SyntaxError::UNEXPECTED_TOKEN, current.getLine(), current.getColumn(), current.getLexeme(), "ADD or DROP");
 
+    table->saveStructureToFile();
+    table->saveDataToFile();
+    
     consume(TokenType::TOK_SEMICOLON);
 }
 
