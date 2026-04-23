@@ -118,6 +118,8 @@ A raw `.ark` script flows through a clean, linear pipeline from text to executed
 | `TRUNCATE TABLE` | Clears all rows; preserves the schema |
 | `RENAME TABLE ... TO` | Renames a table and its disk files atomically |
 | `RENAME COLUMN ... TO ... FROM` | Renames a column and persists the updated schema |
+| `ALTER TABLE ... ADD` | Adds one or more columns; existing rows receive `NULL` for new columns |
+| `ALTER TABLE ... DROP` | Drops one or more columns and removes their data from all existing rows |
 | `SHOW TABLES` | Lists all tables in the active database |
 | `SHOW COLUMNS FROM` | Displays column names and types in a formatted table |
 
@@ -281,6 +283,36 @@ RENAME COLUMN grade TO score FROM students;
 SHOW TABLES;
 SHOW COLUMNS FROM students;
 ```
+
+### 🔧 Alter Table
+
+`ALTER TABLE` modifies the schema of an existing table. All changes are immediately persisted to disk. Multiple columns can be added or dropped in a single statement using comma separation.
+
+```sql
+-- Add a single column (existing rows receive NULL for the new column)
+ALTER TABLE students ADD COLUMN age INT;
+
+-- Add multiple columns at once
+ALTER TABLE students ADD COLUMN age INT, ADD COLUMN email STRING;
+
+-- COLUMN keyword is optional — COLUMNS is also accepted
+ALTER TABLE students ADD COLUMNS age INT, ADD COLUMNS email STRING;
+
+-- Drop a single column
+ALTER TABLE students DROP COLUMN age;
+
+-- Drop multiple columns at once
+ALTER TABLE students DROP COLUMN age, DROP COLUMN email;
+
+-- COLUMNS keyword is also accepted
+ALTER TABLE students DROP COLUMNS age, DROP COLUMNS email;
+```
+
+> **Notes:**
+> - `ADD` and `DROP` cannot be mixed in the same `ALTER TABLE` statement — use separate statements.
+> - When adding columns, every existing row automatically receives a `NULL` value for each new column.
+> - When dropping columns, the corresponding cell is removed from every existing row.
+> - Schema and data files are saved to disk automatically after every `ALTER TABLE`.
 
 ### ✏️ Insert
 
@@ -469,6 +501,12 @@ SELECT name AS student_name, grade
     ORDER BY grade DESC;
 
 SELECT * FROM students INNER JOIN clubs ON students.id = clubs.student_id;
+
+-- Add a new column; existing rows receive NULL
+ALTER TABLE students ADD COLUMN age INT;
+
+-- Drop a column no longer needed
+ALTER TABLE students DROP COLUMN age;
 
 COUNT(*) FROM students;
 AVG(grade) FROM students;
