@@ -589,8 +589,6 @@ void Parser::parseAlter(DatabaseManager& manager) {
         DataType type = parseDataType();
         table->addColumn(Column(ColumnName, type));
 
-        int columnIndex = getColumnIndex(table, ColumnName);
-
         for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->addCell(Cell());
     }
     else if(match(TokenType::TOK_DROP)) {
@@ -601,11 +599,15 @@ void Parser::parseAlter(DatabaseManager& manager) {
         consume(TokenType::TOK_IDENTIFIER);
 
         int columnIndex = getColumnIndex(table, ColumnName);
+        if(columnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), ColumnName, table->getName());
 
         for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->dropCell(columnIndex);
 
         table->dropColumn(columnIndex);
     }
+    else throw SyntaxException(SyntaxError::UNEXPECTED_TOKEN, current.getLine(), current.getColumn(), current.getLexeme(), "ADD or DROP");
+
+    consume(TokenType::TOK_SEMICOLON);
 }
 
 
@@ -695,6 +697,8 @@ void Parser::parseSelect(DatabaseManager& manager) {
         if(selectAll) for(int i = 0; i < table->getColumnCount(); i++) columnIndexes.push_back(i);
         else {
             for(const std::string& colName : selectedColumns) {
+                int colIndex = getColumnIndex(table, colName);
+                if(colIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), colName, table->getName());
                 columnIndexes.push_back(getColumnIndex(table, colName));
             }
         }
@@ -1051,6 +1055,7 @@ void Parser::parseOutterJoin(Database* db, Table* table1, const std::vector<std:
     consume(TokenType::TOK_IDENTIFIER);
 
     Table* table2 = db->getTable(table2Name);
+    checkNotNull(table2, table2Name);
 
     consume(TokenType::TOK_ON);
 
@@ -1210,6 +1215,7 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
                 std::vector<Row> rows = table->selectAll();
 
                 selectedColumnIndex = getColumnIndex(table, selectedColumn);
+                if(selectedColumnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), selectedColumn, table->getName());
 
                 if(whereRows.empty()) for(const Row& row : rows) if(!row.getCell(selectedColumnIndex).isNullValue()) count++;
                 else for(int idx : whereRows) if(!rows[idx].getCell(selectedColumnIndex).isNullValue()) count++;
@@ -1239,6 +1245,7 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
             checkNotNull(table, tableName);
 
             int selectedColumnIndex = getColumnIndex(table, selectedColumn);
+            if(selectedColumnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), selectedColumn, table->getName());
 
             std::vector<int> whereRows;
             if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
@@ -1300,7 +1307,8 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
             checkNotNull(table, tableName);
 
             int selectedColumnIndex = getColumnIndex(table, selectedColumn);
-
+            if(selectedColumnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), selectedColumn, table->getName());
+        
             std::vector<int> whereRows;
             if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
 
@@ -1353,7 +1361,8 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
             Table* table = db->getTable(tableName);
             checkNotNull(table, tableName);
 
-            int colIndex = getColumnIndex(table, selectedColumn);
+            int selectedColumnIndex = getColumnIndex(table, selectedColumn);
+            if(selectedColumnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), selectedColumn, table->getName());
 
             std::vector<int> whereRows;
             if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
@@ -1367,7 +1376,7 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
 
             if(whereRows.empty()) {
                 for(const Row& row : rows) {
-                    Cell cell = row.getCell(colIndex);
+                    Cell cell = row.getCell(selectedColumnIndex);
 
                     if(cell.isNullValue()) continue;
 
@@ -1379,7 +1388,7 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
             }
             else {
                 for(int idx : whereRows) {
-                    Cell cell = rows[idx].getCell(colIndex);
+                    Cell cell = rows[idx].getCell(selectedColumnIndex);
 
                     if(cell.isNullValue()) continue;
 
@@ -1415,7 +1424,9 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
             Table* table = db->getTable(tableName);
             checkNotNull(table, tableName);
 
-            int colIndex = getColumnIndex(table, selectedColumn);
+            int selectedColumnIndex = getColumnIndex(table, selectedColumn);
+            if(selectedColumnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), selectedColumn, table->getName());
+        
 
             std::vector<int> whereRows;
             if(match(TokenType::TOK_WHERE)) whereRows = parseWhereClause(table);
@@ -1429,7 +1440,7 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
 
             if(whereRows.empty()) {
                 for(const Row& row : rows) {
-                    Cell cell = row.getCell(colIndex);
+                    Cell cell = row.getCell(selectedColumnIndex);
 
                     if(cell.isNullValue()) continue;
 
@@ -1441,7 +1452,7 @@ void Parser::parseAggregateSelect(DatabaseManager& manager, TokenType aggregator
             }
             else {
                 for(int idx : whereRows) {
-                    Cell cell = rows[idx].getCell(colIndex);
+                    Cell cell = rows[idx].getCell(selectedColumnIndex);
 
                     if(cell.isNullValue()) continue;
 
@@ -1488,7 +1499,7 @@ void Parser::parseUpdate(DatabaseManager& manager) {
         if(colIndex == -1) {
             throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), columnNames[columnCounter], table->getName());
         }
-        updateColumnIndexes.push_back(getColumnIndex(table, columnNames[columnCounter]));
+        updateColumnIndexes.push_back(colIndex);
         columnCounter++;
 
         consume(TokenType::TOK_IDENTIFIER);
@@ -1579,6 +1590,7 @@ void Parser::parseTruncate(DatabaseManager& manager) {
     if(!db) return;
 
     Table* table = db->getTable(tableName);
+    checkNotNull(table, tableName);
 
     table->clearRows();
 

@@ -12,6 +12,7 @@ namespace detail {
             case SyntaxError::UNKNOWN_CREATE_KEYWORD : return "UNKOWN_CREATE_KEYWORD";
             case SyntaxError::UNKNOWN_DROP_KEYWORD : return "UNKOWN_DROP_KEYWORD";
             case SyntaxError::UNKNOWN_SHOW_KEYWORD : return "UNKOWN_SHOW_KEYWORD";
+            case SyntaxError::EXPECTED_COMPARISON_OPERATOR : return "EXPECTED_COMPARISON_OPERATOR";
             case SyntaxError::UNKNOWN_COMMAND : return "UNKOWN_COMMAND";
             default : return "UNKOWN";
         }
@@ -22,6 +23,7 @@ namespace detail {
             case TypeError::LIMIT_NOT_INT : return "LIMIT_NOT_INT";
             case TypeError::LIKE_REQUIRES_STRING : return "LIKE_REQUIRES_STRING";
             case TypeError::INVALID_NUMERIC_LITERAL : return "INVALID_NUMERIC_LITERAL";
+            case TypeError::NEGATIVE_LIMIT : return "NEGATIVE_LIMIT";
             default : return "UNKOWN";
         }
     }
@@ -36,6 +38,10 @@ namespace detail {
             case RuntimeError::NO_DATABASES : return "NO_DATABASES";
             case RuntimeError::COLUMN_COUNT_MISMATCH : return "COLUMN_COUNT_MISMATCH";
             case RuntimeError::LIKE_PATTERN_TOO_SHORT : return "LIKE_PATTERN_TOO_SHORT";
+            case RuntimeError::INSERT_TYPE_MISMATCH  : return "INSERT_TYPE_MISMATCH";
+            case RuntimeError::TABLE_ALREADY_EXISTS : return "TABLE_ALREADY_EXISTS";
+            case RuntimeError::DUPLICATE_COLUMN_NAME : return "DUPLICATE_COLUMN_NAME";
+            case RuntimeError::NO_DATABASE_SELECTED : return "NO_DATABASE_SELECTED";
             default : return "UNKOWN";
         }
     }
