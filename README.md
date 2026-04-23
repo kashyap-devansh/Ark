@@ -108,12 +108,16 @@ A raw `.ark` script flows through a clean, linear pipeline from text to executed
 | `DROP DATABASE` | Deletes the database directory and all its files |
 | `USE` | Selects a database and loads it into memory |
 | `SHOW DATABASES` | Lists all known databases |
+| `SAVE` | Serializes all tables (schema + data) to disk |
+| `LOAD` | Restores the full database from disk into memory |
+
+> **Auto-discovery:** On startup, `DatabaseManager` automatically scans `./databases/` and registers all previously created databases — no manual registration required.
 
 ### 🗃️ Table Management
 
 | Command | Description |
 |---------|-------------|
-| `CREATE TABLE` | Creates a typed table; detects duplicate column names |
+| `CREATE TABLE` | Creates a typed table; detects and rejects duplicate column names |
 | `DROP TABLE` | Removes the table from memory and deletes its disk files |
 | `TRUNCATE TABLE` | Clears all rows; preserves the schema |
 | `RENAME TABLE ... TO` | Renames a table and its disk files atomically |
@@ -139,41 +143,45 @@ All four join types are supported. The `ON` condition uses `table.column = table
 
 | Join Type | Behaviour |
 |-----------|-----------|
-| `INNER JOIN` | Only rows with a match in both tables |
+| `INNER JOIN` / `JOIN` | Only rows with a match in both tables |
 | `LEFT JOIN` | All left rows; NULLs for unmatched right rows |
 | `RIGHT JOIN` | All right rows; NULLs for unmatched left rows |
 | `FULL JOIN` / `FULL OUTER JOIN` | All rows from both tables; NULLs where no match |
 
-> **Note:** Joins support `SELECT *` and column-selective queries. `WHERE`, `ORDER BY`, and `LIMIT` are not composable with joins.
+> **Note:** Joins support `SELECT *` and column-selective queries. `WHERE`, `ORDER BY`, and `LIMIT` are not composable with joins in the current version.
 
 ### 📊 Aggregate Functions
 
-All aggregates support an optional `WHERE` clause for filtered computation.
+Aggregates use a standalone syntax — they do **not** use `SELECT`. Each aggregate supports an optional `WHERE` clause and an optional `LIMIT` clause for filtered computation.
 
-| Function | Description |
-|----------|-------------|
-| `COUNT(*)` | Total number of rows |
-| `COUNT(col)` | Count of non-NULL values in a column |
-| `SUM(col)` | Sum of numeric values |
-| `AVG(col)` | Average of numeric values |
-| `MIN(col)` | Minimum value in a column |
-| `MAX(col)` | Maximum value in a column |
+| Function | Description | NULL handling |
+|----------|-------------|---------------|
+| `COUNT(*)` | Total number of rows | Counts all rows including NULLs |
+| `COUNT(col)` | Count of values in a column | Skips NULL values |
+| `SUM(col)` | Sum of numeric values | Skips NULL values |
+| `AVG(col)` | Average of numeric values | Skips NULL values |
+| `MIN(col)` | Minimum value in a column | Skips NULL values |
+| `MAX(col)` | Maximum value in a column | Skips NULL values |
+
+> **Important:** `COUNT(*)` and `COUNT(col)` behave differently. `COUNT(*)` counts every row unconditionally. `COUNT(col)` only counts rows where that column's value is not `NULL`. All other aggregates (`SUM`, `AVG`, `MIN`, `MAX`) silently skip `NULL` cells and operate only on non-null values.
 
 ### 🔍 Querying & Filtering
 
 | Feature | Details |
 |---------|---------|
 | Comparison operators | `==`  `!=`  `<`  `>`  `<=`  `>=` |
-| Logical chaining | `AND` / `OR` across multiple conditions in one `WHERE` clause |
-| Pattern matching | `LIKE` on `STRING` columns — `%word%`, `A%`, `%z` |
-| Sorting | `ORDER BY <col> ASC \| DESC` — composable with `WHERE` and `DISTINCT` |
-| Row limiting | `LIMIT <n>` on `SELECT`, `UPDATE`, and `DELETE` |
+| Logical chaining | `AND` / `OR` — chain any number of conditions in one `WHERE` clause |
+| Pattern matching | `LIKE` on `STRING` columns only — three supported patterns: `%word%` (contains), `A%` (starts with character), `%z` (ends with character) |
+| Sorting | `ORDER BY <col> ASC \| DESC` — composable with `WHERE`, `DISTINCT`, and `LIMIT` |
+| Row limiting | `LIMIT <n>` on `SELECT`, `UPDATE`, `DELETE`, and aggregate queries |
+
+> **LIKE limitations:** Only the three patterns above are supported. Multi-character prefix/suffix patterns (e.g. `ab%`), single-character wildcards (`_`), and mid-string wildcards (e.g. `a%b`) are not supported. The pattern string must be at least 2 characters long.
 
 ### 💾 Persistence
 
 - **`SAVE`** — serializes all tables (schema + data) to disk using a custom quote-safe CSV format
 - **`LOAD`** — restores the full database from disk into memory
-- **Auto-discovery** — on startup `DatabaseManager` scans `./databases/` and registers all previously created databases
+- **Auto-discovery** — on startup `DatabaseManager` scans `./databases/` and registers all previously created databases automatically
 
 ---
 
@@ -273,6 +281,8 @@ CREATE DATABASE school;
 DROP DATABASE school;
 USE school;
 SHOW DATABASES;
+SAVE;
+LOAD;
 
 -- Table
 CREATE TABLE students (id INT, name STRING, grade DOUBLE, enrolled BOOL);
@@ -330,24 +340,39 @@ INSERT INTO students VALUES
 ### 🔍 Select & Filter
 
 ```sql
+-- Basic
 SELECT * FROM students;
 SELECT id, name FROM students;
+
+-- Column aliasing
 SELECT name AS student_name, grade AS score FROM students;
+
+-- Deduplication
 SELECT DISTINCT grade FROM students;
 
 -- WHERE with comparisons
 SELECT * FROM students WHERE grade > 80.0;
+
+-- Chaining multiple AND/OR conditions (unlimited chain)
 SELECT * FROM students WHERE enrolled == TRUE AND grade >= 90.0;
 SELECT * FROM students WHERE grade < 60.0 OR enrolled == FALSE;
+SELECT * FROM students WHERE grade > 50.0 AND grade < 80.0 AND enrolled == TRUE;
 
--- LIKE pattern matching
+-- LIKE pattern matching (STRING columns only)
+-- Supported patterns:
+--   A%     → starts with character 'A'
+--   %e     → ends with character 'e'
+--   %li%   → contains substring "li"
 SELECT * FROM students WHERE name LIKE "A%";
 SELECT * FROM students WHERE name LIKE "%ice";
 SELECT * FROM students WHERE name LIKE "%li%";
 
--- ORDER BY
+-- ORDER BY (ASC is default)
 SELECT * FROM students ORDER BY grade ASC;
 SELECT * FROM students ORDER BY grade DESC;
+
+-- LIMIT on SELECT
+SELECT * FROM students LIMIT 5;
 
 -- Combined
 SELECT DISTINCT name AS student_name
@@ -357,11 +382,16 @@ SELECT DISTINCT name AS student_name
     LIMIT 5;
 ```
 
+> **LIKE note:** Only single-character prefix (`A%`), single-character suffix (`%z`), and substring (`%word%`) patterns are supported. Patterns like `ab%`, `a%b`, or `_x%` are not valid.
+
 ### 🔗 Joins
 
 ```sql
 -- INNER JOIN  — matched rows only
 SELECT * FROM students INNER JOIN clubs ON students.id = clubs.student_id;
+
+-- JOIN is shorthand for INNER JOIN
+SELECT * FROM students JOIN clubs ON students.id = clubs.student_id;
 
 -- LEFT JOIN   — all students, NULLs for unmatched clubs
 SELECT * FROM students LEFT JOIN clubs ON students.id = clubs.student_id;
@@ -377,45 +407,66 @@ SELECT * FROM students FULL OUTER JOIN clubs ON students.id = clubs.student_id;
 SELECT name, club FROM students INNER JOIN clubs ON students.id = clubs.student_id;
 ```
 
-> `WHERE`, `ORDER BY`, and `LIMIT` are not supported after a `JOIN`.
+> **Current limitations:** `WHERE`, `ORDER BY`, and `LIMIT` are not supported after a `JOIN`.
 
 ### 📊 Aggregates
 
-```sql
-COUNT(*)             FROM students;
-COUNT(name)          FROM students;
-SUM(grade)           FROM students;
-AVG(grade)           FROM students;
-MIN(grade)           FROM students;
-MAX(grade)           FROM students;
+Aggregates use a standalone syntax — **do not prefix them with `SELECT`**.
 
--- with WHERE
+```sql
+-- Full table
+COUNT(*) FROM students;
+COUNT(name) FROM students;
+SUM(grade) FROM students;
+AVG(grade) FROM students;
+MIN(grade) FROM students;
+MAX(grade) FROM students;
+
+-- With WHERE
 COUNT(*) FROM students WHERE enrolled == TRUE;
 AVG(grade) FROM students WHERE grade > 60.0;
+
+-- With WHERE and LIMIT
+COUNT(*) FROM students WHERE enrolled == TRUE LIMIT 10;
+SUM(grade) FROM students WHERE grade >= 50.0 LIMIT 5;
 ```
+
+> **NULL behavior:** `COUNT(*)` counts every row. All other aggregates — including `COUNT(col)` — silently skip `NULL` values and only operate on non-null cells.
 
 ### ✏️ Update & Delete
 
 ```sql
--- UPDATE
+-- UPDATE — full table
 UPDATE students SET enrolled = FALSE;
+
+-- UPDATE — multiple columns
 UPDATE students SET grade = 100.0, enrolled = TRUE;
+
+-- UPDATE — with WHERE
 UPDATE students SET grade = 0.0 WHERE enrolled == FALSE;
+
+-- UPDATE — with WHERE and LIMIT
 UPDATE students SET grade = 0.0 WHERE grade < 50.0 LIMIT 3;
 
--- DELETE
+-- DELETE — full table
 DELETE FROM students;
+
+-- DELETE — with WHERE
 DELETE FROM students WHERE grade < 60.0;
+
+-- DELETE — with multiple conditions
 DELETE FROM students WHERE enrolled == FALSE OR grade < 50.0;
+
+-- DELETE — with LIMIT
 DELETE FROM students WHERE grade < 60.0 LIMIT 2;
 ```
 
 ### 💾 Persistence
 
-```bash
-# Inside a .ark script:
-SAVE;   # serialize all tables to disk
-LOAD;   # restore database from disk
+```sql
+-- Inside a .ark script:
+SAVE;   -- serialize all tables (schema + data) to disk
+LOAD;   -- restore database from disk into memory
 ```
 
 ---
@@ -424,7 +475,7 @@ LOAD;   # restore database from disk
 
 ```
 Ark/
-├── databases/                    # Auto-generated at runtime
+├── databases/                    # Auto-generated at runtime; scanned on startup
 │   └── <dbname>/
 │       ├── tables/               # .tbl — column name/type schema per table
 │       ├── data/                 # .dat — quote-safe CSV row data per table
