@@ -208,6 +208,7 @@ Token Tokenizer::nextToken() {
         case ')' : return Token(TokenType::TOK_RPAREN, ")", tokenLine, tokenColumn);
         case ',' : return Token(TokenType::TOK_COMMA, ",", tokenLine, tokenColumn);
         case '*' : return Token(TokenType::TOK_STAR, "*", tokenLine, tokenColumn);
+        case ':' : return Token(TokenType::TOK_COLON, ":", tokenLine, tokenColumn);
         case ';' : return Token(TokenType::TOK_SEMICOLON, ";", tokenLine, tokenColumn);
         case '.' : return Token(TokenType::TOK_DOT, ".", tokenLine, tokenColumn);
     }

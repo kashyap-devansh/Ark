@@ -90,6 +90,7 @@ enum class TokenType {
     TOK_RPAREN,            // )
     TOK_COMMA,             // ,
     TOK_STAR,              // *
+    TOK_COLON,             // :
     TOK_SEMICOLON,         // ;
     TOK_DOT,               // .
 

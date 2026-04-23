@@ -580,36 +580,50 @@ void Parser::parseAlter(DatabaseManager& manager) {
     checkNotNull(table, tableName);
 
     if(match(TokenType::TOK_ADD)) {
-        consume(TokenType::TOK_ADD);
-        consume(TokenType::TOK_COLUMN);
+        while(!match(TokenType::TOK_SEMICOLON)) {
+            consume(TokenType::TOK_ADD);
 
-        std::string ColumnName = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
+            if(match(TokenType::TOK_COLUMN)) consume(TokenType::TOK_COLUMN);
+            else if(match(TokenType::TOK_COLUMNS)) consume(TokenType::TOK_COLUMNS);
+            else throw SyntaxException(SyntaxError::UNEXPECTED_TOKEN, current.getLine(), current.getColumn(), current.getLexeme(), "COLUMN or COLUMNS");
 
-        DataType type = parseDataType();
-        table->addColumn(Column(ColumnName, type));
+            std::string ColumnName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
 
-        for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->addCell(Cell());
+            DataType type = parseDataType();
+            table->addColumn(Column(ColumnName, type));
+
+            for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->addCell(Cell()); 
+
+            if(match(TokenType::TOK_COMMA)) consume(TokenType::TOK_COMMA);
+        }
     }
     else if(match(TokenType::TOK_DROP)) {
-        consume(TokenType::TOK_DROP);
-        consume(TokenType::TOK_COLUMN);
+        while(!match(TokenType::TOK_SEMICOLON)) {
+            consume(TokenType::TOK_DROP);
 
-        std::string ColumnName = current.getLexeme();
-        consume(TokenType::TOK_IDENTIFIER);
+            if(match(TokenType::TOK_COLUMN)) consume(TokenType::TOK_COLUMN);
+            else if(match(TokenType::TOK_COLUMNS)) consume(TokenType::TOK_COLUMNS);
+            else throw SyntaxException(SyntaxError::UNEXPECTED_TOKEN, current.getLine(), current.getColumn(), current.getLexeme(), "COLUMN or COLUMNS");
 
-        int columnIndex = getColumnIndex(table, ColumnName);
-        if(columnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), ColumnName, table->getName());
+            std::string ColumnName = current.getLexeme();
+            consume(TokenType::TOK_IDENTIFIER);
 
-        for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->dropCell(columnIndex);
+            int columnIndex = getColumnIndex(table, ColumnName);
+            if(columnIndex == -1) throw RuntimeException(RuntimeError::COLUMN_NOT_FOUND, current.getLine(), current.getColumn(), ColumnName, table->getName());
 
-        table->dropColumn(columnIndex);
+            for(int i = 0; i < static_cast<int>(table->getRowCount()); i++) table->getRow(i)->dropCell(columnIndex);
+
+            table->dropColumn(columnIndex); 
+
+            if(match(TokenType::TOK_COMMA)) consume(TokenType::TOK_COMMA);
+        }
     }
     else throw SyntaxException(SyntaxError::UNEXPECTED_TOKEN, current.getLine(), current.getColumn(), current.getLexeme(), "ADD or DROP");
 
     table->saveStructureToFile();
     table->saveDataToFile();
-    
+
     consume(TokenType::TOK_SEMICOLON);
 }
 

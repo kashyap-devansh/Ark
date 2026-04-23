@@ -1,4 +1,3 @@
--- Setup
 CREATE DATABASE testdb;
 USE testdb;
 
@@ -8,24 +7,30 @@ CREATE TABLE employees (
     age INT
 );
 
--- Insert some rows before altering
-INSERT INTO employees VALUES (1, "Alice", 30), (2, "Bob", 25), (3, "Charlie", 35);
-
--- Check before
-SELECT * FROM employees;
-
--- This is what you're about to implement:
-ALTER TABLE employees ADD COLUMN salary DOUBLE;
-
--- After adding the column, existing rows should have NULL for salary
-SELECT * FROM employees;
-
--- Insert a new row that includes the new column
-INSERT INTO employees VALUES (4, "Diana", 28, 150000.0);
+INSERT INTO employees VALUES
+(1, "Alice", 30),
+(2, "Bob", 25),
+(3, "Charlie", 35);
 
 SELECT * FROM employees;
 
-ALTER TABLE employees DROP COLUMN salary;
+-- Add multiple columns
+ALTER TABLE employees
+ADD COLUMN salary DOUBLE,
+ADD COLUMN department STRING;
+
+SELECT * FROM employees;
+
+-- Insert with new columns
+INSERT INTO employees VALUES
+(4, "Diana", 28, 150000.0, "HR");
+
+SELECT * FROM employees;
+
+-- Drop multiple columns
+ALTER TABLE employees
+DROP COLUMN salary,
+DROP COLUMN department;
 
 SELECT * FROM employees;
 
