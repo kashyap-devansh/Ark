@@ -559,8 +559,8 @@ ALTER TABLE students ADD COLUMN age INT;
 -- Drop a column no longer needed
 ALTER TABLE students DROP COLUMN age;
 
-COUNT(*) FROM students;
-AVG(grade) FROM students;
+SELECT COUNT(*) FROM students;
+SELECT AVG(grade) FROM students;
 
 SAVE;
 ```
