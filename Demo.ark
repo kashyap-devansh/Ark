@@ -1,37 +1,38 @@
-CREATE DATABASE testdb;
-USE testdb;
+-- ArkTest.ark
 
-CREATE TABLE employees (
-    id INT,
-    name STRING,
-    age INT
-);
+CREATE DATABASE school;
+USE school;
 
-INSERT INTO employees VALUES
-(1, "Alice", 30),
-(2, "Bob", 25),
-(3, "Charlie", 35);
+CREATE TABLE students (id INT, name STRING, grade DOUBLE, enrolled BOOL);
+CREATE TABLE clubs    (student_id INT, club STRING);
 
-SELECT * FROM employees;
+INSERT INTO students VALUES
+    (1, "Alice",   95.5, TRUE),
+    (2, "Bob",     74.0, TRUE),
+    (3, "Charlie", 58.2, FALSE),
+    (4, "Diana",   88.7, TRUE);
 
--- Add multiple columns
-ALTER TABLE employees
-ADD COLUMN salary DOUBLE,
-ADD COLUMN department STRING;
+INSERT INTO clubs VALUES
+    (1, "Chess"), (2, "Chess"), (4, "Drama");
 
-SELECT * FROM employees;
+SELECT * FROM students ORDER BY grade DESC;
 
--- Insert with new columns
-INSERT INTO employees VALUES
-(4, "Diana", 28, 150000.0, "HR");
+DELETE FROM students WHERE grade < 60.0;
 
-SELECT * FROM employees;
+SELECT name AS student_name, grade
+    FROM students
+    WHERE enrolled == TRUE
+    ORDER BY grade DESC;
 
--- Drop multiple columns
-ALTER TABLE employees
-DROP COLUMN salary,
-DROP COLUMN department;
+SELECT * FROM students INNER JOIN clubs ON students.id = clubs.student_id;
 
-SELECT * FROM employees;
+-- Add a new column; existing rows receive NULL
+ALTER TABLE students ADD COLUMN age INT;
+
+-- Drop a column no longer needed
+ALTER TABLE students DROP COLUMN age;
+
+SELECT COUNT(*) FROM students;
+SELECT AVG(grade) FROM students;
 
 SAVE;
