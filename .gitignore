@@ -5,6 +5,7 @@
 *.o
 *.obj
 *.txt
+ark
 
 build/
 desktop.ini

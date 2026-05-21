@@ -1,38 +1,226 @@
--- ArkTest.ark
+-- Demo.ark
+-- Full Stable Ark Showcase
 
-CREATE DATABASE school;
-USE school;
+CREATE DATABASE enterprise;
+USE enterprise;
 
-CREATE TABLE students (id INT, name STRING, grade DOUBLE, enrolled BOOL);
-CREATE TABLE clubs    (student_id INT, club STRING);
+SHOW DATABASES;
 
-INSERT INTO students VALUES
-    (1, "Alice",   95.5, TRUE),
-    (2, "Bob",     74.0, TRUE),
-    (3, "Charlie", 58.2, FALSE),
-    (4, "Diana",   88.7, TRUE);
+-- =====================================================
+-- TABLE CREATION
+-- =====================================================
 
-INSERT INTO clubs VALUES
-    (1, "Chess"), (2, "Chess"), (4, "Drama");
+CREATE TABLE employees (
+    id INT,
+    name STRING,
+    department STRING,
+    salary DOUBLE,
+    active BOOL
+);
 
-SELECT * FROM students ORDER BY grade DESC;
+CREATE TABLE projects (
+    emp_id INT,
+    project STRING
+);
 
-DELETE FROM students WHERE grade < 60.0;
+SHOW TABLES;
 
-SELECT name AS student_name, grade
-    FROM students
-    WHERE enrolled == TRUE
-    ORDER BY grade DESC;
+SHOW COLUMNS FROM employees;
 
-SELECT * FROM students INNER JOIN clubs ON students.id = clubs.student_id;
+-- =====================================================
+-- INSERT DATA
+-- =====================================================
 
--- Add a new column; existing rows receive NULL
-ALTER TABLE students ADD COLUMN age INT;
+INSERT INTO employees VALUES
+    (1, "Alice",   "Engineering", 95000.0, TRUE),
+    (2, "Bob",     "Design",      72000.0, TRUE),
+    (3, "Charlie", "Engineering", 88000.0, TRUE),
+    (4, "Diana",   "HR",          65000.0, FALSE),
+    (5, "Eve",     "Marketing",   70000.0, TRUE),
+    (6, "Frank",   "Engineering", 99000.0, TRUE),
+    (7, "Grace",   "Design",      81000.0, FALSE);
 
--- Drop a column no longer needed
-ALTER TABLE students DROP COLUMN age;
+INSERT INTO projects VALUES
+    (1, "Compiler"),
+    (1, "Database"),
+    (2, "UI System"),
+    (3, "Parser"),
+    (6, "Networking");
 
-SELECT COUNT(*) FROM students;
-SELECT AVG(grade) FROM students;
+-- =====================================================
+-- BASIC SELECTS
+-- =====================================================
+
+SELECT * FROM employees;
+
+SELECT id, name, salary FROM employees;
+
+SELECT name AS employee_name, salary AS income
+FROM employees;
+
+-- =====================================================
+-- WHERE CLAUSES
+-- =====================================================
+
+SELECT * FROM employees
+WHERE salary > 80000.0;
+
+SELECT * FROM employees
+WHERE department == "Engineering"
+AND salary > 90000.0;
+
+SELECT * FROM employees
+WHERE active == FALSE
+OR salary < 70000.0;
+
+-- =====================================================
+-- LIKE QUERIES
+-- =====================================================
+
+SELECT * FROM employees
+WHERE name LIKE "A%";
+
+SELECT * FROM employees
+WHERE name LIKE "%e";
+
+SELECT * FROM employees
+WHERE department LIKE "%ing%";
+
+-- =====================================================
+-- DISTINCT
+-- =====================================================
+
+SELECT DISTINCT department FROM employees;
+
+-- =====================================================
+-- ORDER BY
+-- =====================================================
+
+SELECT * FROM employees
+ORDER BY salary DESC;
+
+SELECT * FROM employees
+ORDER BY salary ASC;
+
+-- =====================================================
+-- UPDATE
+-- =====================================================
+
+UPDATE employees
+SET salary = 100000.0
+WHERE name == "Alice";
+
+UPDATE employees
+SET salary = 85000.0, active = TRUE
+WHERE name == "Grace";
+
+SELECT * FROM employees;
+
+-- =====================================================
+-- ALTER TABLE
+-- =====================================================
+
+ALTER TABLE employees
+ADD COLUMN age INT,
+ADD COLUMN email STRING;
+
+SHOW COLUMNS FROM employees;
+
+UPDATE employees
+SET age = 24
+WHERE name == "Alice";
+
+UPDATE employees
+SET age = 28
+WHERE name == "Bob";
+
+UPDATE employees
+SET email = "alice@ark.dev"
+WHERE name == "Alice";
+
+UPDATE employees
+SET email = "bob@ark.dev"
+WHERE name == "Bob";
+
+SELECT * FROM employees;
+
+-- =====================================================
+-- JOINS
+-- =====================================================
+
+SELECT * FROM employees
+INNER JOIN projects
+ON employees.id = projects.emp_id;
+
+SELECT * FROM employees
+LEFT JOIN projects
+ON employees.id = projects.emp_id;
+
+SELECT * FROM employees
+RIGHT JOIN projects
+ON employees.id = projects.emp_id;
+
+SELECT * FROM employees
+FULL JOIN projects
+ON employees.id = projects.emp_id;
+
+SELECT name, project
+FROM employees
+INNER JOIN projects
+ON employees.id = projects.emp_id;
+
+-- =====================================================
+-- AGGREGATES
+-- =====================================================
+
+SELECT COUNT(*) FROM employees;
+
+SELECT COUNT(email) FROM employees;
+
+SELECT SUM(salary) FROM employees;
+
+SELECT AVG(salary) FROM employees;
+
+SELECT MIN(salary) FROM employees;
+
+SELECT MAX(salary) FROM employees;
+
+SELECT COUNT(*) FROM employees
+WHERE department == "Engineering";
+
+SELECT AVG(salary) FROM employees
+WHERE active == TRUE;
+
+-- =====================================================
+-- DELETE
+-- =====================================================
+
+DELETE FROM employees
+WHERE active == FALSE;
+
+SELECT * FROM employees;
+
+-- =====================================================
+-- DROP COLUMN
+-- =====================================================
+
+ALTER TABLE employees
+DROP COLUMN email;
+
+SHOW COLUMNS FROM employees;
+
+-- =====================================================
+-- SAVE / LOAD
+-- =====================================================
 
 SAVE;
+
+LOAD;
+
+-- =====================================================
+-- FINAL STATE
+-- =====================================================
+
+SELECT * FROM employees;
+
+SELECT * FROM projects;
